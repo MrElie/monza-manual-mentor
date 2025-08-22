@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -14,6 +14,7 @@ const Auth = () => {
   const navigate = useNavigate();
   const { signIn, signUp } = useAuth();
   const { toast } = useToast();
+  const [searchParams] = useSearchParams();
   
   const [isSignUp, setIsSignUp] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -23,6 +24,16 @@ const Auth = () => {
     confirmPassword: ''
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Check URL params to determine mode
+  useEffect(() => {
+    const mode = searchParams.get('mode');
+    if (mode === 'signup') {
+      setIsSignUp(true);
+    } else if (mode === 'signin') {
+      setIsSignUp(false);
+    }
+  }, [searchParams]);
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};

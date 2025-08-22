@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -93,6 +94,14 @@ const Index = () => {
     });
   };
 
+  const handleSignUpClick = () => {
+    navigate('/auth?mode=signup');
+  };
+
+  const handleSignInClick = () => {
+    navigate('/auth?mode=signin');
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -158,7 +167,7 @@ const Index = () => {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => navigate('/auth')}
+                    onClick={handleSignInClick}
                     className="bg-transparent border-white/20 text-white hover:bg-white/10"
                   >
                     <LogIn className="h-4 w-4 mr-2" />
@@ -166,7 +175,7 @@ const Index = () => {
                   </Button>
                   <Button
                     size="sm"
-                    onClick={() => navigate('/auth')}
+                    onClick={handleSignUpClick}
                     className="bg-white text-primary hover:bg-white/90"
                   >
                     <UserPlus className="h-4 w-4 mr-2" />
@@ -270,7 +279,7 @@ const Index = () => {
               <Button 
                 size="lg" 
                 className="bg-gradient-to-r from-primary to-accent hover:shadow-lg transition-all duration-300"
-                onClick={() => navigate('/auth')}
+                onClick={handleSignInClick}
               >
                 {t('auth.signInButton')}
               </Button>

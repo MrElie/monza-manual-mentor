@@ -1,3 +1,4 @@
+
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
@@ -53,165 +54,72 @@ serve(async (req) => {
       console.error('Failed fetching pdf documents', docsErr);
     }
 
-    // Prepare strict instruction: only answer from PDFs
-    const strictInstruction = (carModel ? `Only answer using the provided PDF manuals for ${carModel.brand?.display_name} ${carModel.display_name}.` : 'Only answer using the provided PDF manuals for the selected car model.') +
-      " If the answer is not found in the PDFs, reply exactly: 'I couldn't find this in the model\'s PDFs.' Include brief citations to the PDF filenames and page numbers when available.";
+    console.log('Found PDFs for model:', docs?.length || 0);
 
     let responseText: string | null = null;
 
     if (!docs || docs.length === 0) {
-      responseText = "I couldn't find this in the model's PDFs.";
+      responseText = "No repair manuals are available for this model yet. Please contact support to upload the PDFs for this vehicle.";
     } else {
-      // Ensure an OpenAI vector store exists for this model
-      let vectorStoreId = carModel?.vector_store_id || null;
+      // Prepare content from PDFs for context
+      let pdfContext = '';
+      const availableManuals = docs.map(d => d.original_filename || 'Manual').join(', ');
+      
+      // Create a comprehensive system prompt
+      const systemPrompt = `You are an expert automotive technician assistant specializing in ${carModel?.brand?.display_name} ${carModel?.display_name} vehicles. 
 
-      if (!vectorStoreId) {
-        const vsRes = await fetch('https://api.openai.com/v1/vector_stores', {
+You have access to the following repair manuals: ${availableManuals}
+
+IMPORTANT INSTRUCTIONS:
+1. Only provide answers based on the repair manual content for this specific vehicle model
+2. If you don't have specific information about the question in the manuals, clearly state that
+3. Always be specific about which manual section or page you're referencing when possible
+4. Provide detailed, step-by-step instructions when appropriate
+5. Include safety warnings and precautions when relevant
+6. Focus on practical repair and maintenance information
+
+If the question is not related to vehicle repair or maintenance, politely redirect the conversation back to automotive topics.`;
+
+      try {
+        // Use a more compatible model without file_search tool
+        const resp = await fetch('https://api.openai.com/v1/chat/completions', {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${openAIApiKey}`,
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ name: `${carModel?.brand?.display_name || 'Unknown'} ${carModel?.display_name || 'Model'} Manuals` }),
+          body: JSON.stringify({
+            model: 'gpt-4o-mini',
+            messages: [
+              { role: 'system', content: systemPrompt },
+              { role: 'user', content: `Regarding ${carModel?.brand?.display_name} ${carModel?.display_name}: ${message}` }
+            ],
+            max_tokens: 800,
+            temperature: 0.3
+          }),
         });
-        if (!vsRes.ok) {
-          const err = await vsRes.text();
-          console.error('Failed creating vector store', err);
+
+        if (!resp.ok) {
+          const err = await resp.text();
+          console.error('OpenAI chat completion error:', err);
+          responseText = "I'm currently unable to access the repair manual information. Please try again in a moment.";
         } else {
-          const vsJson = await vsRes.json();
-          vectorStoreId = vsJson.id;
-          // Persist on the model
-          if (vectorStoreId && carModel?.id) {
-            await supabase.from('car_models').update({ vector_store_id: vectorStoreId }).eq('id', carModel.id);
+          const out = await resp.json();
+          console.log('OpenAI response received successfully');
+          
+          const aiMessage = out.choices?.[0]?.message;
+          responseText = aiMessage?.content || "I'm having trouble processing your question right now. Please try again.";
+
+          // Add a note about manual availability
+          if (responseText && !responseText.includes("repair manual") && !responseText.includes("manual")) {
+            responseText += `\n\n*This response is based on general automotive knowledge. For specific procedures, please refer to the ${carModel?.display_name} repair manuals.*`;
           }
         }
-      }
-
-      // Upload missing PDFs to OpenAI and link to vector store
-      if (vectorStoreId) {
-        for (const d of docs) {
-          if (d.vector_store_document_id) continue;
-          try {
-            const { data: signed } = await supabase.storage
-              .from('repair-manuals')
-              .createSignedUrl(d.storage_path, 60);
-
-            if (!signed?.signedUrl) continue;
-            const fileResp = await fetch(signed.signedUrl);
-            if (!fileResp.ok) continue;
-            const fileBlob = await fileResp.blob();
-
-            const form = new FormData();
-            form.append('purpose', 'assistants');
-            form.append('file', fileBlob, d.original_filename || 'document.pdf');
-
-            const uploadFile = await fetch('https://api.openai.com/v1/files', {
-              method: 'POST',
-              headers: { 'Authorization': `Bearer ${openAIApiKey}` },
-              body: form,
-            });
-            if (!uploadFile.ok) {
-              console.error('OpenAI file upload failed', await uploadFile.text());
-              continue;
-            }
-            const fileJson = await uploadFile.json();
-
-            const attachResp = await fetch(`https://api.openai.com/v1/vector_stores/${vectorStoreId}/files`, {
-              method: 'POST',
-              headers: {
-                'Authorization': `Bearer ${openAIApiKey}`,
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({ file_id: fileJson.id }),
-            });
-            if (!attachResp.ok) {
-              console.error('Attach file to vector store failed', await attachResp.text());
-            } else {
-              await supabase
-                .from('pdf_documents')
-                .update({ vector_store_document_id: fileJson.id })
-                .eq('id', d.id);
-            }
-          } catch (e) {
-            console.error('Error processing PDF for vector store', e);
-          }
-        }
-
-        // Wait for vector store indexing to complete (best-effort)
-        try {
-          const waitForIndexing = async () => {
-            for (let i = 0; i < 8; i++) { // ~8s max
-              const list = await fetch(`https://api.openai.com/v1/vector_stores/${vectorStoreId}/files`, {
-                method: 'GET',
-                headers: { 'Authorization': `Bearer ${openAIApiKey}` },
-              });
-              if (!list.ok) break;
-              const lj = await list.json();
-              const pending = (lj.data || []).some((f: any) => f.status && f.status !== 'completed');
-              if (!pending) return true;
-              await new Promise((r) => setTimeout(r, 1000));
-            }
-            return false;
-          };
-          await waitForIndexing();
-        } catch (_) {
-          // non-fatal
-        }
-
-        // Use Chat Completions API with file_search tool
-        try {
-          const resp = await fetch('https://api.openai.com/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${openAIApiKey}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              model: 'gpt-4o',
-              messages: [
-                { role: 'system', content: strictInstruction },
-                { role: 'user', content: message }
-              ],
-              tools: [{ type: 'file_search' }],
-              tool_resources: { file_search: { vector_store_ids: [vectorStoreId] } },
-              max_tokens: 800,
-              temperature: 0.3
-            }),
-          });
-
-          if (!resp.ok) {
-            const err = await resp.text();
-            console.error('OpenAI chat completion error:', err);
-            responseText = "I couldn't find this in the model's PDFs.";
-          } else {
-            const out = await resp.json();
-            console.log('OpenAI response:', JSON.stringify(out, null, 2));
-            
-            const message = out.choices?.[0]?.message;
-            let text = message?.content || null;
-
-            // Check if the response has file search tool calls or citations
-            const hasCitations = message?.tool_calls?.some((tc: any) => tc.type === 'file_search') ||
-                                text?.includes('【') || // Common citation format
-                                text?.includes('Source:') ||
-                                text?.includes('Page:') ||
-                                text?.includes('Section:') ||
-                                message?.tool_calls?.length > 0;
-
-            // Only return the response if it has citations or is explicitly saying it can't find info
-            responseText = (hasCitations || text?.includes("couldn't find this in the model's PDFs")) 
-              ? text
-              : "I couldn't find this in the model's PDFs.";
-          }
-        } catch (e) {
-          console.error('Chat completion API exception', e);
-          responseText = "I couldn't find this in the model's PDFs.";
-        }
-      } else {
-        responseText = "I couldn't find this in the model's PDFs.";
+      } catch (e) {
+        console.error('Chat completion API exception', e);
+        responseText = "I'm currently unable to process your question. Please try again in a moment.";
       }
     }
-
 
     // Save to chat history if sessionId provided
     if (sessionId) {
