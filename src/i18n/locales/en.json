@@ -58,6 +58,7 @@
   "camera": {
     "title": "Visual Diagnostics",
     "takePicture": "Take Picture",
+    "uploadImage": "Upload Image",
     "retake": "Retake",
     "analyze": "Analyze",
     "analyzing": "Analyzing image with AI...",

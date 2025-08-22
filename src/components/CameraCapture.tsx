@@ -124,7 +124,7 @@ const CameraCapture: React.FC<CameraCaptureProps> = ({ onImageAnalysis, modelId 
             <div className="flex flex-col sm:flex-row gap-3">
               <Button
                 onClick={takePicture}
-                className="flex-1 bg-[var(--automotive-gradient)]"
+                className="flex-1 bg-primary hover:bg-primary/90 text-white"
                 size="lg"
               >
                 <CameraIcon className="mr-2 h-4 w-4" />
@@ -167,7 +167,7 @@ const CameraCapture: React.FC<CameraCaptureProps> = ({ onImageAnalysis, modelId 
                 <Button
                   onClick={analyzeImage}
                   disabled={analyzing}
-                  className="flex-1 bg-[var(--automotive-gradient)]"
+                  className="flex-1 bg-primary hover:bg-primary/90 text-white"
                   size="lg"
                 >
                   {analyzing ? (
