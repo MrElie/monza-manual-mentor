@@ -18,7 +18,8 @@ import {
   ArrowLeft, 
   Loader2,
   User,
-  Bot
+  Bot,
+  Trash2
 } from 'lucide-react';
 import { CarModel, ChatSession, ChatMessage } from '@/types/database';
 import CameraCapture from '@/components/CameraCapture';
@@ -216,6 +217,32 @@ const Chat = () => {
     }
   };
 
+  const clearChat = async () => {
+    if (!session) return;
+
+    try {
+      const { error } = await supabase
+        .from('chat_messages')
+        .delete()
+        .eq('session_id', session.id);
+
+      if (error) throw error;
+
+      setMessages([]);
+      toast({
+        title: t('common.success'),
+        description: 'Chat cleared successfully'
+      });
+    } catch (error) {
+      console.error('Error clearing chat:', error);
+      toast({
+        title: t('common.error'),
+        description: 'Failed to clear chat',
+        variant: 'destructive'
+      });
+    }
+  };
+
   if (!model) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -232,27 +259,38 @@ const Chat = () => {
       {/* Header */}
       <header className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-10">
         <div className="container mx-auto px-4 py-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => navigate('/')}
-              >
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                {t('common.back')}
-              </Button>
-              <div>
-                <h1 className="font-semibold text-lg">
-                  {model.brand?.display_name} {model.display_name}
-                </h1>
-                <p className="text-sm text-muted-foreground">
-                  {t('chat.title')}
-                </p>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => navigate('/')}
+                >
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  {t('common.back')}
+                </Button>
+                <div>
+                  <h1 className="font-semibold text-lg">
+                    {model.brand?.display_name} {model.display_name}
+                  </h1>
+                  <p className="text-sm text-muted-foreground">
+                    {t('chat.title')}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={clearChat}
+                  disabled={messages.length === 0}
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Clear Chat
+                </Button>
+                <LanguageSelector />
               </div>
             </div>
-            <LanguageSelector />
-          </div>
         </div>
       </header>
 

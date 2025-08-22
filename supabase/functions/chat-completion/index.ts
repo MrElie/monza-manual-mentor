@@ -59,26 +59,31 @@ serve(async (req) => {
     let responseText: string | null = null;
 
     if (!docs || docs.length === 0) {
-      responseText = "No repair manuals are available for this model yet. Please contact support to upload the PDFs for this vehicle.";
+      responseText = `I apologize, but no repair manuals are currently available for the ${carModel?.brand?.display_name} ${carModel?.display_name}. Without access to the specific repair documentation for this vehicle, I cannot provide accurate technical information. Please contact support to upload the repair manuals for this vehicle model.`;
     } else {
       // Prepare content from PDFs for context
       let pdfContext = '';
       const availableManuals = docs.map(d => d.original_filename || 'Manual').join(', ');
       
-      // Create a comprehensive system prompt
-      const systemPrompt = `You are an expert automotive technician assistant specializing in ${carModel?.brand?.display_name} ${carModel?.display_name} vehicles. 
+      // Create a comprehensive system prompt with strict PDF-only policy
+      const systemPrompt = `You are an expert automotive technician assistant specializing EXCLUSIVELY in ${carModel?.brand?.display_name} ${carModel?.display_name} vehicles.
 
-You have access to the following repair manuals: ${availableManuals}
+CRITICAL CONSTRAINTS:
+1. You can ONLY answer questions using information from these specific repair manuals: ${availableManuals}
+2. If the information is not available in these manuals, you MUST clearly state: "This information is not available in the current repair manuals for this vehicle."
+3. NEVER use general automotive knowledge or assumptions - only use documented information from the provided manuals
+4. Always specify which manual and section/page you're referencing when possible
+5. If asked about procedures not covered in the manuals, redirect users to consult a certified technician
+6. Focus strictly on repair, maintenance, and diagnostic information from the manuals
+7. When relevant diagrams or images would be helpful, mention their availability in the manual (e.g., "Refer to Figure 5.3 in the Engine Manual")
 
-IMPORTANT INSTRUCTIONS:
-1. Only provide answers based on the repair manual content for this specific vehicle model
-2. If you don't have specific information about the question in the manuals, clearly state that
-3. Always be specific about which manual section or page you're referencing when possible
-4. Provide detailed, step-by-step instructions when appropriate
-5. Include safety warnings and precautions when relevant
-6. Focus on practical repair and maintenance information
+RESPONSE FORMAT:
+- Start with the manual reference (e.g., "According to the [Manual Name], Section [X]...")
+- Provide the specific information from the manual
+- Include safety warnings if mentioned in the manual
+- End with manual citation if not already mentioned
 
-If the question is not related to vehicle repair or maintenance, politely redirect the conversation back to automotive topics.`;
+If the question is not vehicle-specific or not covered in the manuals, politely explain the limitation and suggest consulting the repair manuals directly or contacting a certified technician.`;
 
       try {
         const vsId = carModel?.vector_store_id as string | undefined;
@@ -98,15 +103,15 @@ If the question is not related to vehicle repair or maintenance, politely redire
             messages: [
               { 
                 role: 'system', 
-                content: `${systemPrompt}\n\nYou have access to repair manual content for this vehicle. Always cite the exact section/page when possible. Answer in ${language}.`
+                content: `${systemPrompt}\n\nREMEMBER: You can ONLY use information from the repair manuals listed above. If you don't have the specific information in the manuals, you must clearly state this limitation. Answer in ${language}.`
               },
               { 
                 role: 'user', 
-                content: `Regarding ${carModel?.brand?.display_name} ${carModel?.display_name}: ${message}. 
+                content: `Question about ${carModel?.brand?.display_name} ${carModel?.display_name}: "${message}"
 
-Available manuals: ${availableManuals}
+Available repair manuals for reference: ${availableManuals}
 
-Please provide detailed repair information based on the vehicle's repair manuals.`
+Please provide information ONLY from these specific repair manuals. If the information is not available in the manuals, please state that clearly.`
               }
             ],
             max_tokens: 800,
@@ -124,9 +129,9 @@ Please provide detailed repair information based on the vehicle's repair manuals
           const aiMessage = out.choices?.[0]?.message;
           responseText = aiMessage?.content || "I'm having trouble processing your question right now. Please try again.";
 
-          // Add manual reference if not mentioned
-          if (responseText && !responseText.includes("repair manual") && !responseText.includes("manual")) {
-            responseText += `\n\n*This response is based on the ${availableManuals} repair manuals for your ${carModel?.display_name}.*`;
+          // Ensure proper manual citation
+          if (responseText && !responseText.toLowerCase().includes("manual") && !responseText.toLowerCase().includes("section")) {
+            responseText = `Based on the available repair manuals (${availableManuals}):\n\n${responseText}\n\n*Note: This information is sourced exclusively from the repair documentation for your ${carModel?.display_name}.*`;
           }
         }
       } catch (e) {
