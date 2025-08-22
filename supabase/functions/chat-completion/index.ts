@@ -84,7 +84,8 @@ If the question is not related to vehicle repair or maintenance, politely redire
         const vsId = carModel?.vector_store_id as string | undefined;
 
         if (vsId) {
-          // Use OpenAI Responses API with Vector Store attachments for grounded answers
+          console.log('Using vector store for file_search:', vsId);
+          // Use OpenAI Responses API with Vector Store via tool_resources for grounded answers
           const resp = await fetch('https://api.openai.com/v1/responses', {
             method: 'POST',
             headers: {
@@ -95,12 +96,14 @@ If the question is not related to vehicle repair or maintenance, politely redire
               model: 'gpt-5-mini-2025-08-07',
               // Newer models use max_completion_tokens and do NOT support temperature
               max_completion_tokens: 800,
-              attachments: [
-                { vector_store_id: vsId }
-              ],
               tools: [
                 { type: 'file_search' }
               ],
+              tool_resources: {
+                file_search: {
+                  vector_store_ids: [vsId]
+                }
+              },
               input: [
                 {
                   role: 'system',
