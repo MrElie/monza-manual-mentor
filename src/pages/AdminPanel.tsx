@@ -267,11 +267,11 @@ const AdminPanel = () => {
       return;
     }
 
-    const MAX_SIZE_BYTES = 256 * 1024 * 1024;
+    const MAX_SIZE_BYTES = 50 * 1024 * 1024;
     if (file.size > MAX_SIZE_BYTES) {
       toast({
         title: "File too large",
-        description: "Please upload a PDF smaller than 256 MB.",
+        description: "Please upload a PDF smaller than 50 MB.",
         variant: "destructive",
       });
       return;
@@ -321,7 +321,7 @@ const AdminPanel = () => {
       if (statusCode === 413 || /exceeded the maximum allowed size/i.test(message)) {
         toast({
           title: "File too large",
-          description: "Your PDF exceeds the maximum allowed size (256 MB). Please compress it and try again.",
+          description: "Your PDF exceeds the maximum allowed size (~50 MB) on your current plan. Please compress it and try again.",
           variant: "destructive",
         });
       } else {
@@ -333,6 +333,33 @@ const AdminPanel = () => {
       }
     } finally {
       setUploading(false);
+    }
+  };
+  
+  const handleDeleteDocument = async (doc: PdfDocument) => {
+    try {
+      const { error: removeError } = await supabase.storage
+        .from('repair-manuals')
+        .remove([doc.storage_path]);
+      if (removeError) throw removeError;
+
+      const { error: dbError } = await supabase
+        .from('pdf_documents')
+        .delete()
+        .eq('id', doc.id);
+      if (dbError) throw dbError;
+
+      toast({
+        title: 'Deleted',
+        description: 'Document deleted successfully',
+      });
+      fetchAllData();
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to delete document',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -634,7 +661,7 @@ const AdminPanel = () => {
                     </Select>
                   </div>
                   <div>
-                    <Label htmlFor="pdf-upload">Upload PDF (up to 256 MB)</Label>
+                    <Label htmlFor="pdf-upload">Upload PDF (up to 50 MB)</Label>
                     <Input
                       id="pdf-upload"
                       type="file"
@@ -677,7 +704,7 @@ const AdminPanel = () => {
                           </AlertDialogHeader>
                           <AlertDialogFooter>
                             <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction>Delete</AlertDialogAction>
+                            <AlertDialogAction onClick={() => handleDeleteDocument(doc)}>Delete</AlertDialogAction>
                           </AlertDialogFooter>
                         </AlertDialogContent>
                       </AlertDialog>
