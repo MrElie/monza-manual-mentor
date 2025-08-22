@@ -301,6 +301,18 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: Database["public"]["Enums"]["user_role"]
       }
+      get_my_interaction_logs: {
+        Args: { _limit?: number; _offset?: number }
+        Returns: {
+          ai_response: string
+          created_at: string
+          id: string
+          interaction_type: string
+          message_content: string
+          model_name: string
+          session_id: string
+        }[]
+      }
       is_admin: {
         Args: Record<PropertyKey, never>
         Returns: boolean
