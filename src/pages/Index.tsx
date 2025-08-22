@@ -158,19 +158,21 @@ const Index = () => {
 
             {/* Hero Content */}
             <div className="text-center">
-              <div className="flex items-center justify-center mb-6">
+              <div className="flex flex-col items-center justify-center mb-6">
                 <img 
                   src="/monza-logo.png" 
                   alt="Monza Logo" 
-                  className="h-12 w-auto mr-4"
+                  className="h-16 w-auto mb-4"
                   onError={(e) => {
                     e.currentTarget.style.display = 'none';
                   }}
                 />
-                <Wrench className="h-12 w-12 mr-4" />
-                <h1 className="text-4xl md:text-6xl font-bold">
-                  {t('app.title')}
-                </h1>
+                <div className="flex items-center justify-center">
+                  <Wrench className="h-12 w-12 mr-4" />
+                  <h1 className="text-4xl md:text-6xl font-bold">
+                    {t('app.title')}
+                  </h1>
+                </div>
               </div>
               <p className="text-xl md:text-2xl mb-8 max-w-3xl mx-auto opacity-90">
                 {t('app.subtitle')}
