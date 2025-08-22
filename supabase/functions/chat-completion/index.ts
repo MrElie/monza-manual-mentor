@@ -33,7 +33,7 @@ serve(async (req) => {
     console.log('Processing chat completion for model:', modelId, 'language:', language);
 
     // Get car model info for context
-    let carModel = null;
+    let carModel: any = null;
     if (modelId) {
       const { data } = await supabase
         .from('car_models')
@@ -43,85 +43,141 @@ serve(async (req) => {
       carModel = data;
     }
 
-    // Build system prompt based on language and model
-    const systemPromptEn = `You are an expert automotive technician and repair assistant specializing in electric vehicles, particularly Voyah and Mhero models.
+    // Fetch PDFs for the model
+    const { data: docs, error: docsErr } = await supabase
+      .from('pdf_documents')
+      .select('id, storage_path, original_filename, vector_store_document_id')
+      .eq('model_id', modelId as string);
 
-${carModel ? `You are currently assisting with a ${carModel.brand?.display_name} ${carModel.display_name} vehicle.` : ''}
-
-Your expertise includes:
-- Electric vehicle systems (battery, motors, charging)
-- Diagnostic trouble codes (DTCs) and their solutions
-- Repair procedures and maintenance schedules
-- Parts identification and replacement procedures
-- Safety protocols for high-voltage systems
-- Wiring diagrams and electrical troubleshooting
-- Body work and interior repairs
-- Software updates and calibrations
-
-Guidelines:
-1. Always prioritize safety, especially with high-voltage systems
-2. Provide step-by-step repair instructions when appropriate
-3. Include part numbers, torque specifications, and special tools when known
-4. Explain diagnostic procedures clearly
-5. Mention relevant safety precautions and warnings
-6. If you need more information, ask specific diagnostic questions
-7. Reference relevant service bulletins or technical updates when applicable
-
-Respond in a professional, clear, and helpful manner. If asked about something outside automotive repair, politely redirect to vehicle-related topics.`;
-
-    const systemPromptAr = `أنت فني سيارات خبير ومساعد إصلاح متخصص في المركبات الكهربائية، وخاصة موديلات فوياه ومهيرو.
-
-${carModel ? `أنت تساعد حالياً في سيارة ${carModel.brand?.display_name} ${carModel.display_name}.` : ''}
-
-خبرتك تشمل:
-- أنظمة المركبات الكهربائية (البطارية، المحركات، الشحن)
-- رموز اكتشاف الأعطال التشخيصية وحلولها
-- إجراءات الإصلاح وجداول الصيانة
-- تحديد القطع وإجراءات الاستبدال
-- بروتوكولات السلامة لأنظمة الجهد العالي
-- مخططات الأسلاك واستكشاف الأعطال الكهربائية
-- أعمال الهيكل وإصلاحات الداخلية
-- تحديثات البرامج والمعايرة
-
-الإرشادات:
-1. أعط الأولوية دائماً للسلامة، خاصة مع أنظمة الجهد العالي
-2. قدم تعليمات الإصلاح خطوة بخطوة عند الاقتضاء
-3. اذكر أرقام القطع ومواصفات عزم الدوران والأدوات الخاصة عند معرفتها
-4. اشرح إجراءات التشخيص بوضوح
-5. اذكر احتياطات السلامة والتحذيرات ذات الصلة
-6. إذا كنت بحاجة لمزيد من المعلومات، اطرح أسئلة تشخيصية محددة
-7. ارجع إلى نشرات الخدمة أو التحديثات التقنية ذات الصلة عند الاقتضاء
-
-اجب بطريقة مهنية وواضحة ومفيدة. إذا سُئلت عن شيء خارج إصلاح السيارات، وجه بأدب نحو المواضيع المتعلقة بالمركبات.`;
-
-    const systemPrompt = language === 'ar' ? systemPromptAr : systemPromptEn;
-
-    // Get chat completion from OpenAI
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: message }
-        ],
-        max_tokens: 2000,
-        temperature: 0.7
-      }),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.error('OpenAI API error:', errorData);
-      throw new Error(`OpenAI API error: ${errorData.error?.message || 'Unknown error'}`);
+    if (docsErr) {
+      console.error('Failed fetching pdf documents', docsErr);
     }
 
-    const data = await response.json();
-    const responseText = data.choices[0].message.content;
+    // Prepare strict instruction: only answer from PDFs
+    const strictInstruction = (carModel ? `Only answer using the provided PDF manuals for ${carModel.brand?.display_name} ${carModel.display_name}.` : 'Only answer using the provided PDF manuals for the selected car model.') +
+      " If the answer is not found in the PDFs, reply exactly: 'I couldn't find this in the model\'s PDFs.' Include brief citations to the PDF filenames and page numbers when available.";
+
+    let responseText: string | null = null;
+
+    if (!docs || docs.length === 0) {
+      responseText = "I couldn't find this in the model's PDFs.";
+    } else {
+      // Ensure an OpenAI vector store exists for this model
+      let vectorStoreId = carModel?.vector_store_id || null;
+
+      if (!vectorStoreId) {
+        const vsRes = await fetch('https://api.openai.com/v1/vector_stores', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${openAIApiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ name: `${carModel?.brand?.display_name || 'Unknown'} ${carModel?.display_name || 'Model'} Manuals` }),
+        });
+        if (!vsRes.ok) {
+          const err = await vsRes.text();
+          console.error('Failed creating vector store', err);
+        } else {
+          const vsJson = await vsRes.json();
+          vectorStoreId = vsJson.id;
+          // Persist on the model
+          if (vectorStoreId && carModel?.id) {
+            await supabase.from('car_models').update({ vector_store_id: vectorStoreId }).eq('id', carModel.id);
+          }
+        }
+      }
+
+      // Upload missing PDFs to OpenAI and link to vector store
+      if (vectorStoreId) {
+        for (const d of docs) {
+          if (d.vector_store_document_id) continue;
+          try {
+            const { data: signed } = await supabase.storage
+              .from('repair-manuals')
+              .createSignedUrl(d.storage_path, 60);
+
+            if (!signed?.signedUrl) continue;
+            const fileResp = await fetch(signed.signedUrl);
+            if (!fileResp.ok) continue;
+            const fileBlob = await fileResp.blob();
+
+            const form = new FormData();
+            form.append('purpose', 'assistants');
+            form.append('file', fileBlob, d.original_filename || 'document.pdf');
+
+            const uploadFile = await fetch('https://api.openai.com/v1/files', {
+              method: 'POST',
+              headers: { 'Authorization': `Bearer ${openAIApiKey}` },
+              body: form,
+            });
+            if (!uploadFile.ok) {
+              console.error('OpenAI file upload failed', await uploadFile.text());
+              continue;
+            }
+            const fileJson = await uploadFile.json();
+
+            const attachResp = await fetch(`https://api.openai.com/v1/vector_stores/${vectorStoreId}/files`, {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${openAIApiKey}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ file_id: fileJson.id }),
+            });
+            if (!attachResp.ok) {
+              console.error('Attach file to vector store failed', await attachResp.text());
+            } else {
+              await supabase
+                .from('pdf_documents')
+                .update({ vector_store_document_id: fileJson.id })
+                .eq('id', d.id);
+            }
+          } catch (e) {
+            console.error('Error processing PDF for vector store', e);
+          }
+        }
+
+        // Query strictly with file_search using the vector store
+        try {
+          const resp = await fetch('https://api.openai.com/v1/responses', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${openAIApiKey}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              model: 'gpt-4.1-2025-04-14',
+              input: [
+                { role: 'system', content: strictInstruction },
+                { role: 'user', content: message }
+              ],
+              tools: [{ type: 'file_search' }],
+              tool_resources: { file_search: { vector_store_ids: [vectorStoreId] } },
+              max_completion_tokens: 800
+            }),
+          });
+
+          if (!resp.ok) {
+            const err = await resp.text();
+            console.error('OpenAI responses error:', err);
+            responseText = "I couldn't find this in the model's PDFs.";
+          } else {
+            const out = await resp.json();
+            // Try to read output text robustly
+            responseText = out.output_text
+              || out.output?.map((c: any) => (c.content?.map?.((p: any) => p.text?.value).filter(Boolean).join('\n'))).filter(Boolean).join('\n')
+              || out.choices?.[0]?.message?.content
+              || "I couldn't find this in the model's PDFs.";
+          }
+        } catch (e) {
+          console.error('Responses API exception', e);
+          responseText = "I couldn't find this in the model's PDFs.";
+        }
+      } else {
+        responseText = "I couldn't find this in the model's PDFs.";
+      }
+    }
+
 
     // Save to chat history if sessionId provided
     if (sessionId) {
