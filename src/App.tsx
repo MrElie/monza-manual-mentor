@@ -9,7 +9,7 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Chat from "./pages/Chat";
-import Admin from "./pages/Admin";
+import AdminPanel from "./pages/AdminPanel";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -48,14 +48,11 @@ const App = () => (
                   </ProtectedRoute>
                 } 
               />
-              <Route 
-                path="/admin" 
-                element={
+                <Route path="/admin" element={
                   <ProtectedRoute>
-                    <Admin />
+                    <AdminPanel />
                   </ProtectedRoute>
-                } 
-              />
+                } />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

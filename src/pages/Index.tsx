@@ -9,6 +9,7 @@ import LanguageSelector from "@/components/LanguageSelector";
 import ColorPicker from "@/components/ColorPicker";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import Footer from "@/components/Footer";
 import { Wrench, Car, Shield, LogOut, Settings } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -139,7 +140,7 @@ const Index = () => {
                       className="bg-transparent border-white/20 text-white hover:bg-white/10"
                     >
                       <Settings className="h-4 w-4 mr-2" />
-                      Admin
+                      Admin Panel
                     </Button>
                   )}
                   <Button
@@ -158,6 +159,14 @@ const Index = () => {
             {/* Hero Content */}
             <div className="text-center">
               <div className="flex items-center justify-center mb-6">
+                <img 
+                  src="/monza-logo.png" 
+                  alt="Monza Logo" 
+                  className="h-12 w-auto mr-4"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                  }}
+                />
                 <Wrench className="h-12 w-12 mr-4" />
                 <h1 className="text-4xl md:text-6xl font-bold">
                   {t('app.title')}
@@ -247,6 +256,7 @@ const Index = () => {
           </section>
         )}
       </main>
+      <Footer />
     </>
   );
 };
