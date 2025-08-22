@@ -6,6 +6,7 @@ import { CarBrand, CarModel } from "@/types/database";
 import { useAuth } from "@/contexts/AuthContext";
 import CarModelCard from "@/components/CarModelCard";
 import LanguageSelector from "@/components/LanguageSelector";
+import ColorPicker from "@/components/ColorPicker";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Wrench, Car, Shield, LogOut, Settings } from "lucide-react";
@@ -123,6 +124,7 @@ const Index = () => {
             <div className="flex justify-between items-center mb-8">
               <div className="flex items-center gap-4">
                 <LanguageSelector />
+                <ColorPicker />
               </div>
               {user && (
                 <div className="flex items-center gap-4">
