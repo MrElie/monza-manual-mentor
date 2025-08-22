@@ -162,19 +162,19 @@ const Index = () => {
                 <img 
                   src="/monza-logo.png" 
                   alt="Monza Logo" 
-                  className="h-16 w-auto mb-4"
+                  className="h-20 w-auto mb-4"
                   onError={(e) => {
                     e.currentTarget.style.display = 'none';
                   }}
                 />
                 <div className="flex items-center justify-center">
-                  <Wrench className="h-12 w-12 mr-4" />
-                  <h1 className="text-4xl md:text-6xl font-bold">
+                  <Wrench className="h-10 w-10 mr-4" />
+                  <h1 className="text-3xl md:text-4xl font-bold">
                     {t('app.title')}
                   </h1>
                 </div>
               </div>
-              <p className="text-xl md:text-2xl mb-8 max-w-3xl mx-auto opacity-90">
+              <p className="text-lg md:text-xl mb-8 max-w-3xl mx-auto opacity-90">
                 {t('app.subtitle')}
               </p>
               <div className="flex flex-wrap justify-center gap-4 mb-8">
