@@ -380,19 +380,27 @@ const Chat = () => {
                         <div className="prose prose-sm max-w-none">
                           <p className="whitespace-pre-wrap m-0">{message.content}</p>
                         </div>
-                        {message.sources?.images && message.sources.images.length > 0 && (
-                          <div className="mt-3 pt-3 border-t border-border">
-                            <p className="text-sm font-medium mb-2">📋 Related Diagrams:</p>
-                            <div className="space-y-2">
-                              {message.sources.images.map((image: any, index: number) => (
-                                <div key={index} className="text-xs bg-muted p-2 rounded">
-                                  <p className="font-medium">{image.description}</p>
-                                  {image.page && <p className="text-muted-foreground">Page {image.page}</p>}
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
+        {message.sources?.images && message.sources.images.length > 0 && (
+          <div className="mt-3 pt-3 border-t border-border">
+            <p className="text-sm font-medium mb-2">📋 Related Diagrams & References:</p>
+            <div className="space-y-2">
+              {message.sources.images.map((image: any, index: number) => (
+                <div key={index} className="text-xs bg-muted/50 p-3 rounded border">
+                  <p className="font-medium text-foreground">{image.description}</p>
+                  <div className="mt-1 space-y-1 text-muted-foreground">
+                    {image.manual && <p><strong>Manual:</strong> {image.manual}</p>}
+                    {image.page && <p><strong>Reference:</strong> {image.page}</p>}
+                    {image.type && <p><strong>Type:</strong> {image.type}</p>}
+                    {image.content && <p><strong>Details:</strong> {image.content}</p>}
+                  </div>
+                  <div className="mt-2 text-xs text-amber-600 dark:text-amber-400">
+                    💡 <strong>Note:</strong> To view this diagram, please refer to your physical repair manual
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
                       </CardContent>
                     </Card>
                   </div>
