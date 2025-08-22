@@ -137,6 +137,27 @@ serve(async (req) => {
           }
         }
 
+        // Wait for vector store indexing to complete (best-effort)
+        try {
+          const waitForIndexing = async () => {
+            for (let i = 0; i < 8; i++) { // ~8s max
+              const list = await fetch(`https://api.openai.com/v1/vector_stores/${vectorStoreId}/files`, {
+                method: 'GET',
+                headers: { 'Authorization': `Bearer ${openAIApiKey}` },
+              });
+              if (!list.ok) break;
+              const lj = await list.json();
+              const pending = (lj.data || []).some((f: any) => f.status && f.status !== 'completed');
+              if (!pending) return true;
+              await new Promise((r) => setTimeout(r, 1000));
+            }
+            return false;
+          };
+          await waitForIndexing();
+        } catch (_) {
+          // non-fatal
+        }
+
         // Query strictly with file_search using the vector store
         try {
           const resp = await fetch('https://api.openai.com/v1/responses', {
@@ -163,11 +184,21 @@ serve(async (req) => {
             responseText = "I couldn't find this in the model's PDFs.";
           } else {
             const out = await resp.json();
-            // Try to read output text robustly
-            responseText = out.output_text
-              || out.output?.map((c: any) => (c.content?.map?.((p: any) => p.text?.value).filter(Boolean).join('\n'))).filter(Boolean).join('\n')
+            // Extract answer text
+            let text = out.output_text
+              || out.output?.map((c: any) => (c.content?.map?.((p: any) => p.text?.value || p.text || p.content).filter(Boolean).join('\n'))).filter(Boolean).join('\n')
               || out.choices?.[0]?.message?.content
-              || "I couldn't find this in the model's PDFs.";
+              || null;
+
+            // Enforce RAG-only: require file citations in annotations
+            const annotations = (out.output?.flatMap((c: any) =>
+              (c.content || []).flatMap((p: any) => (p.text?.annotations || p.annotations || []))
+            ) || []).filter(Boolean);
+            const hasCitations = annotations.some((a: any) => a?.file_citation || a?.file_id || a?.type === 'file_citation');
+
+            responseText = (hasCitations && text)
+              ? text
+              : "I couldn't find this in the model's PDFs.";
           }
         } catch (e) {
           console.error('Responses API exception', e);
