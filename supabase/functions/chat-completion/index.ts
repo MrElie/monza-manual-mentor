@@ -98,6 +98,9 @@ If the question is not related to vehicle repair or maintenance, politely redire
               attachments: [
                 { vector_store_id: vsId }
               ],
+              tools: [
+                { type: 'file_search' }
+              ],
               input: [
                 {
                   role: 'system',
