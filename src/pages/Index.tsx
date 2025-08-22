@@ -8,13 +8,13 @@ import CarModelCard from "@/components/CarModelCard";
 import LanguageSelector from "@/components/LanguageSelector";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Wrench, Car, Shield, LogOut } from "lucide-react";
+import { Wrench, Car, Shield, LogOut, Settings } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const Index = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const { user, signOut } = useAuth();
+  const { user, signOut, isAdmin } = useAuth();
   const [brands, setBrands] = useState<CarBrand[]>([]);
   const [models, setModels] = useState<CarModel[]>([]);
   const [selectedBrand, setSelectedBrand] = useState<CarBrand | null>(null);
@@ -129,6 +129,17 @@ const Index = () => {
                   <span className="text-sm opacity-90">
                     Welcome, {user.email}
                   </span>
+                  {isAdmin && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => navigate('/admin')}
+                      className="bg-transparent border-white/20 text-white hover:bg-white/10"
+                    >
+                      <Settings className="h-4 w-4 mr-2" />
+                      Admin
+                    </Button>
+                  )}
                   <Button
                     variant="outline"
                     size="sm"
