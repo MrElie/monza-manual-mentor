@@ -81,38 +81,106 @@ IMPORTANT INSTRUCTIONS:
 If the question is not related to vehicle repair or maintenance, politely redirect the conversation back to automotive topics.`;
 
       try {
-        // Use a more compatible model without file_search tool
-        const resp = await fetch('https://api.openai.com/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${openAIApiKey}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            model: 'gpt-4o-mini',
-            messages: [
-              { role: 'system', content: systemPrompt },
-              { role: 'user', content: `Regarding ${carModel?.brand?.display_name} ${carModel?.display_name}: ${message}` }
-            ],
-            max_tokens: 800,
-            temperature: 0.3
-          }),
-        });
+        const vsId = carModel?.vector_store_id as string | undefined;
 
-        if (!resp.ok) {
-          const err = await resp.text();
-          console.error('OpenAI chat completion error:', err);
-          responseText = "I'm currently unable to access the repair manual information. Please try again in a moment.";
+        if (vsId) {
+          // Use OpenAI Responses API with Vector Store attachments for grounded answers
+          const resp = await fetch('https://api.openai.com/v1/responses', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${openAIApiKey}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              model: 'gpt-5-mini-2025-08-07',
+              // Newer models use max_completion_tokens and do NOT support temperature
+              max_completion_tokens: 800,
+              attachments: [
+                { vector_store_id: vsId }
+              ],
+              input: [
+                {
+                  role: 'system',
+                  content: [
+                    {
+                      type: 'text',
+                      text: `${systemPrompt}\n\nAlways cite the exact section/page when possible based on the retrieved passages. Answer in ${language}.`
+                    }
+                  ]
+                },
+                {
+                  role: 'user',
+                  content: [
+                    {
+                      type: 'input_text',
+                      text: `Regarding ${carModel?.brand?.display_name} ${carModel?.display_name}: ${message}`
+                    }
+                  ]
+                }
+              ]
+            }),
+          });
+
+          if (!resp.ok) {
+            const err = await resp.text();
+            console.error('OpenAI responses error:', err);
+            responseText = "I'm currently unable to access the repair manual information. Please try again in a moment.";
+          } else {
+            const out = await resp.json();
+            console.log('OpenAI response (responses API) received successfully');
+
+            // Attempt to extract text from various possible response shapes
+            let text: string | null = null;
+            if (typeof out.output_text === 'string') {
+              text = out.output_text;
+            } else if (Array.isArray(out.output)) {
+              try {
+                const parts: string[] = [];
+                for (const p of out.output) {
+                  if (typeof p?.content === 'string') parts.push(p.content);
+                  if (Array.isArray(p?.content)) {
+                    for (const c of p.content) {
+                      if (typeof c?.text === 'string') parts.push(c.text);
+                    }
+                  }
+                  if (typeof p?.text === 'string') parts.push(p.text);
+                }
+                if (parts.length) text = parts.join('\n');
+              } catch (_) { /* noop */ }
+            }
+            responseText = text || "I'm having trouble processing your question right now. Please try again.";
+          }
         } else {
-          const out = await resp.json();
-          console.log('OpenAI response received successfully');
-          
-          const aiMessage = out.choices?.[0]?.message;
-          responseText = aiMessage?.content || "I'm having trouble processing your question right now. Please try again.";
+          // Fallback: no vector store available – use regular chat completions (legacy)
+          const resp = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${openAIApiKey}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              model: 'gpt-4o-mini',
+              messages: [
+                { role: 'system', content: systemPrompt },
+                { role: 'user', content: `Regarding ${carModel?.brand?.display_name} ${carModel?.display_name}: ${message}` }
+              ],
+              max_tokens: 800
+            }),
+          });
 
-          // Add a note about manual availability
-          if (responseText && !responseText.includes("repair manual") && !responseText.includes("manual")) {
-            responseText += `\n\n*This response is based on general automotive knowledge. For specific procedures, please refer to the ${carModel?.display_name} repair manuals.*`;
+          if (!resp.ok) {
+            const err = await resp.text();
+            console.error('OpenAI chat completion error:', err);
+            responseText = "I'm currently unable to access the repair manual information. Please try again in a moment.";
+          } else {
+            const out = await resp.json();
+            console.log('OpenAI response (chat completions) received successfully');
+            const aiMessage = out.choices?.[0]?.message;
+            responseText = aiMessage?.content || "I'm having trouble processing your question right now. Please try again.";
+
+            if (responseText && !responseText.includes("repair manual") && !responseText.includes("manual")) {
+              responseText += `\n\n*This response is based on general automotive knowledge. For specific procedures, please refer to the ${carModel?.display_name} repair manuals.*`;
+            }
           }
         }
       } catch (e) {

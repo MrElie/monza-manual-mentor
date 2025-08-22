@@ -213,9 +213,13 @@ const Auth = () => {
               <Button
                 variant="link"
                 onClick={() => {
+                  const nextMode = isSignUp ? 'signin' : 'signup';
                   setIsSignUp(!isSignUp);
                   setErrors({});
                   setFormData({ email: '', password: '', confirmPassword: '' });
+                  const sp = new URLSearchParams(searchParams);
+                  sp.set('mode', nextMode);
+                  navigate(`/auth?${sp.toString()}`, { replace: true });
                 }}
                 className="p-0 h-auto font-normal"
               >
