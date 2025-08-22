@@ -14,7 +14,209 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      car_brands: {
+        Row: {
+          created_at: string
+          display_name: string
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          display_name: string
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          display_name?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      car_models: {
+        Row: {
+          brand_id: string
+          created_at: string
+          display_name: string
+          id: string
+          image_url: string | null
+          name: string
+          vector_store_id: string | null
+        }
+        Insert: {
+          brand_id: string
+          created_at?: string
+          display_name: string
+          id?: string
+          image_url?: string | null
+          name: string
+          vector_store_id?: string | null
+        }
+        Update: {
+          brand_id?: string
+          created_at?: string
+          display_name?: string
+          id?: string
+          image_url?: string | null
+          name?: string
+          vector_store_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "car_models_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "car_brands"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chat_messages: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          role: string
+          session_id: string
+          sources: Json | null
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          role: string
+          session_id: string
+          sources?: Json | null
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          role?: string
+          session_id?: string
+          sources?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_messages_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "chat_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chat_sessions: {
+        Row: {
+          created_at: string
+          id: string
+          model_id: string
+          title: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          model_id: string
+          title?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          model_id?: string
+          title?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_sessions_model_id_fkey"
+            columns: ["model_id"]
+            isOneToOne: false
+            referencedRelation: "car_models"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pdf_documents: {
+        Row: {
+          created_at: string
+          file_size: number
+          filename: string
+          id: string
+          mime_type: string
+          model_id: string
+          original_filename: string
+          storage_path: string
+          uploaded_by: string | null
+          vector_store_document_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          file_size: number
+          filename: string
+          id?: string
+          mime_type?: string
+          model_id: string
+          original_filename: string
+          storage_path: string
+          uploaded_by?: string | null
+          vector_store_document_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          file_size?: number
+          filename?: string
+          id?: string
+          mime_type?: string
+          model_id?: string
+          original_filename?: string
+          storage_path?: string
+          uploaded_by?: string | null
+          vector_store_document_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pdf_documents_model_id_fkey"
+            columns: ["model_id"]
+            isOneToOne: false
+            referencedRelation: "car_models"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_profiles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["user_role"]
+          updated_at: string
+          user_id: string
+          username: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["user_role"]
+          updated_at?: string
+          user_id: string
+          username?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["user_role"]
+          updated_at?: string
+          user_id?: string
+          username?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +225,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      user_role: "admin" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +352,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      user_role: ["admin", "user"],
+    },
   },
 } as const
