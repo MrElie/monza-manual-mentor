@@ -82,12 +82,12 @@ const Admin = () => {
       });
       return;
     }
-    // Enforce client-side max size (50 MB) to avoid server rejection
-    const MAX_SIZE_BYTES = 50 * 1024 * 1024;
+    // Enforce client-side max size (256 MB) to avoid server rejection
+    const MAX_SIZE_BYTES = 256 * 1024 * 1024;
     if (file.size > MAX_SIZE_BYTES) {
       toast({
         title: "File too large",
-        description: "Please upload a PDF smaller than 50 MB.",
+        description: "Please upload a PDF smaller than 256 MB.",
         variant: "destructive",
       });
       return;
@@ -144,7 +144,7 @@ const Admin = () => {
       if (statusCode === 413 || /exceeded the maximum allowed size/i.test(message)) {
         toast({
           title: "File too large",
-          description: "Your PDF exceeds the maximum allowed size (50 MB). Please compress it and try again.",
+          description: "Your PDF exceeds the maximum allowed size (256 MB). Please compress it and try again.",
           variant: "destructive",
         });
       } else {
