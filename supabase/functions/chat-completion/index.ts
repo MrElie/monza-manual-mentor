@@ -268,15 +268,23 @@ Please provide information ONLY from these specific repair manuals. If the infor
     }
 
     console.log('Chat completion generated successfully');
+    console.log('Final response text:', responseText);
 
-    return new Response(JSON.stringify({ response: responseText }), {
+    return new Response(JSON.stringify({ 
+      response: responseText,
+      success: true,
+      timestamp: new Date().toISOString()
+    }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
   } catch (error) {
     console.error('Error in chat-completion function:', error);
+    console.error('Error stack:', error.stack);
     return new Response(JSON.stringify({ 
-      error: error.message || 'Failed to generate response' 
+      error: error.message || 'Failed to generate response',
+      success: false,
+      timestamp: new Date().toISOString()
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

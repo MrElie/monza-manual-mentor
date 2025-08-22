@@ -151,9 +151,9 @@ const Chat = () => {
 
     setLoading(true);
     
-    // Add user message to UI immediately
+    // Add user message to UI immediately  
     const userMessage: ChatMessage = {
-      id: `temp-${Date.now()}`,
+      id: `temp-user-${Date.now()}`,
       session_id: session.id,
       role: 'user',
       content: messageText,
@@ -163,6 +163,8 @@ const Chat = () => {
     setInputMessage('');
 
     try {
+      console.log('Sending message to chat-completion function:', messageText);
+      
       // Get AI response
       const { data, error } = await supabase.functions.invoke('chat-completion', {
         body: {
@@ -173,10 +175,35 @@ const Chat = () => {
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Edge function error:', error);
+        throw error;
+      }
 
-      // Refresh messages to get the saved ones with proper IDs
-      await fetchMessages();
+      console.log('AI response received:', data);
+
+      // If we got a response, add it to the UI immediately as a fallback
+      if (data?.response) {
+        const assistantMessage: ChatMessage = {
+          id: `temp-assistant-${Date.now()}`,
+          session_id: session.id,
+          role: 'assistant',
+          content: data.response,
+          created_at: new Date().toISOString(),
+          sources: data.images && data.images.length > 0 ? { images: data.images } : null
+        };
+        setMessages(prev => [...prev.filter(msg => msg.id !== userMessage.id), 
+          { ...userMessage, id: `user-${Date.now()}` }, 
+          assistantMessage
+        ]);
+      }
+
+      // Also try to refresh from database, but don't fail if this doesn't work
+      try {
+        await fetchMessages();
+      } catch (fetchError) {
+        console.warn('Failed to fetch messages from database, but response was displayed:', fetchError);
+      }
 
       toast({
         title: t('common.success'),
@@ -186,7 +213,7 @@ const Chat = () => {
       console.error('Error sending message:', error);
       toast({
         title: t('common.error'),
-        description: 'Failed to send message',
+        description: `Failed to send message: ${error.message || 'Unknown error'}`,
         variant: 'destructive'
       });
       
