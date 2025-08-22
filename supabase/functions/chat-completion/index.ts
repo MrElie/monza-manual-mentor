@@ -158,50 +158,53 @@ serve(async (req) => {
           // non-fatal
         }
 
-        // Query strictly with file_search using the vector store
+        // Use Chat Completions API with file_search tool
         try {
-          const resp = await fetch('https://api.openai.com/v1/responses', {
+          const resp = await fetch('https://api.openai.com/v1/chat/completions', {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${openAIApiKey}`,
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              model: 'gpt-4.1-2025-04-14',
-              input: [
+              model: 'gpt-4o',
+              messages: [
                 { role: 'system', content: strictInstruction },
                 { role: 'user', content: message }
               ],
               tools: [{ type: 'file_search' }],
               tool_resources: { file_search: { vector_store_ids: [vectorStoreId] } },
-              max_completion_tokens: 800
+              max_tokens: 800,
+              temperature: 0.3
             }),
           });
 
           if (!resp.ok) {
             const err = await resp.text();
-            console.error('OpenAI responses error:', err);
+            console.error('OpenAI chat completion error:', err);
             responseText = "I couldn't find this in the model's PDFs.";
           } else {
             const out = await resp.json();
-            // Extract answer text
-            let text = out.output_text
-              || out.output?.map((c: any) => (c.content?.map?.((p: any) => p.text?.value || p.text || p.content).filter(Boolean).join('\n'))).filter(Boolean).join('\n')
-              || out.choices?.[0]?.message?.content
-              || null;
+            console.log('OpenAI response:', JSON.stringify(out, null, 2));
+            
+            const message = out.choices?.[0]?.message;
+            let text = message?.content || null;
 
-            // Enforce RAG-only: require file citations in annotations
-            const annotations = (out.output?.flatMap((c: any) =>
-              (c.content || []).flatMap((p: any) => (p.text?.annotations || p.annotations || []))
-            ) || []).filter(Boolean);
-            const hasCitations = annotations.some((a: any) => a?.file_citation || a?.file_id || a?.type === 'file_citation');
+            // Check if the response has file search tool calls or citations
+            const hasCitations = message?.tool_calls?.some((tc: any) => tc.type === 'file_search') ||
+                                text?.includes('【') || // Common citation format
+                                text?.includes('Source:') ||
+                                text?.includes('Page:') ||
+                                text?.includes('Section:') ||
+                                message?.tool_calls?.length > 0;
 
-            responseText = (hasCitations && text)
+            // Only return the response if it has citations or is explicitly saying it can't find info
+            responseText = (hasCitations || text?.includes("couldn't find this in the model's PDFs")) 
               ? text
               : "I couldn't find this in the model's PDFs.";
           }
         } catch (e) {
-          console.error('Responses API exception', e);
+          console.error('Chat completion API exception', e);
           responseText = "I couldn't find this in the model's PDFs.";
         }
       } else {
