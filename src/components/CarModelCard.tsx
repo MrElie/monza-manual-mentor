@@ -52,7 +52,7 @@ const CarModelCard = ({ model, onSelect }: CarModelCardProps) => {
         </h3>
         <Button
           onClick={() => onSelect(model)}
-          className="w-full bg-[var(--automotive-gradient)] hover:shadow-[var(--automotive-glow)] transition-all duration-300"
+          className="w-full bg-gradient-to-r from-primary to-accent text-white hover:shadow-lg hover:scale-105 transition-all duration-300"
           size="lg"
         >
           <MessageSquare className="mr-2 h-4 w-4" />

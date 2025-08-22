@@ -117,7 +117,7 @@ const Index = () => {
 
       <main className="min-h-screen bg-background">
         {/* Hero Section */}
-        <header className="bg-[var(--automotive-gradient)] text-primary-foreground py-16 relative">
+        <header className="bg-gradient-to-br from-primary to-accent text-white py-16 relative">
           <div className="container mx-auto px-4">
             {/* Top Navigation */}
             <div className="flex justify-between items-center mb-8">
@@ -236,7 +236,7 @@ const Index = () => {
               </p>
               <Button 
                 size="lg" 
-                className="bg-[var(--automotive-gradient)]"
+                className="bg-gradient-to-r from-primary to-accent hover:shadow-lg transition-all duration-300"
                 onClick={() => navigate('/auth')}
               >
                 {t('auth.signInButton')}
