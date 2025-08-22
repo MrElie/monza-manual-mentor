@@ -86,8 +86,14 @@ const Admin = () => {
     setUploading(true);
     
     try {
+      // Sanitize filename by removing invalid characters for Supabase Storage
+      const sanitizedFileName = file.name
+        .replace(/[[\]{}()*+?.,\\^$|#\s]/g, '_') // Replace invalid chars with underscore
+        .replace(/_+/g, '_') // Replace multiple underscores with single
+        .replace(/^_|_$/g, ''); // Remove leading/trailing underscores
+      
       // Upload to Supabase Storage
-      const fileName = `${selectedModel}/${Date.now()}-${file.name}`;
+      const fileName = `${selectedModel}/${Date.now()}-${sanitizedFileName}`;
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('repair-manuals')
         .upload(fileName, file);
