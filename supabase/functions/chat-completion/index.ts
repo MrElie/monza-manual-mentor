@@ -145,6 +145,64 @@ ${carModel ? `أنت تساعد حالياً في سيارة ${carModel.brand?.d
       }
     }
 
+    // Log interaction for admins to review later
+    try {
+      const authHeader = req.headers.get('Authorization') || '';
+      const token = authHeader.replace('Bearer', '').trim();
+
+      let userId: string | null = null;
+      let userEmail: string | null = null;
+
+      if (token) {
+        const { data: userRes, error: userErr } = await supabase.auth.getUser(token);
+        if (!userErr && userRes?.user) {
+          userId = userRes.user.id;
+          // deno-lint-ignore no-explicit-any
+          userEmail = (userRes.user as any).email ?? null;
+        }
+      }
+
+      // Fallback: infer user from session if needed
+      if (!userId && sessionId) {
+        const { data: sessionRow } = await supabase
+          .from('chat_sessions')
+          .select('user_id')
+          .eq('id', sessionId)
+          .maybeSingle();
+        if (sessionRow?.user_id) {
+          userId = sessionRow.user_id;
+          // attempt to fetch email from profiles if available
+          const { data: prof } = await supabase
+            .from('user_profiles')
+            .select('username')
+            .eq('user_id', userId)
+            .maybeSingle();
+          if (prof?.username) userEmail = prof.username;
+        }
+      }
+
+      if (userId) {
+        const ip = (req.headers.get('x-forwarded-for') || '')
+          .split(',')[0]
+          .trim() || req.headers.get('x-real-ip') || null;
+        const userAgent = req.headers.get('user-agent') || null;
+
+        await supabase.from('user_interaction_logs').insert({
+          user_id: userId,
+          user_email: userEmail,
+          session_id: sessionId || null,
+          message_content: message,
+          ai_response: responseText,
+          model_name: carModel?.display_name || null,
+          interaction_type: 'chat',
+          ip_address: ip,
+          user_agent: userAgent,
+        });
+      }
+    } catch (logErr) {
+      console.error('Failed to log interaction:', logErr);
+    }
+
     console.log('Chat completion generated successfully');
 
     return new Response(JSON.stringify({ response: responseText }), {

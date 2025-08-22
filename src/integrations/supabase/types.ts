@@ -214,11 +214,55 @@ export type Database = {
           },
         ]
       }
+      user_interaction_logs: {
+        Row: {
+          ai_response: string | null
+          created_at: string
+          id: string
+          interaction_type: string | null
+          ip_address: string | null
+          message_content: string
+          model_name: string | null
+          session_id: string | null
+          user_agent: string | null
+          user_email: string
+          user_id: string
+        }
+        Insert: {
+          ai_response?: string | null
+          created_at?: string
+          id?: string
+          interaction_type?: string | null
+          ip_address?: string | null
+          message_content: string
+          model_name?: string | null
+          session_id?: string | null
+          user_agent?: string | null
+          user_email: string
+          user_id: string
+        }
+        Update: {
+          ai_response?: string | null
+          created_at?: string
+          id?: string
+          interaction_type?: string | null
+          ip_address?: string | null
+          message_content?: string
+          model_name?: string | null
+          session_id?: string | null
+          user_agent?: string | null
+          user_email?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_profiles: {
         Row: {
           approved: boolean
           created_at: string
           id: string
+          last_ip_address: string | null
+          last_login: string | null
           role: Database["public"]["Enums"]["user_role"]
           updated_at: string
           user_id: string
@@ -228,6 +272,8 @@ export type Database = {
           approved?: boolean
           created_at?: string
           id?: string
+          last_ip_address?: string | null
+          last_login?: string | null
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string
           user_id: string
@@ -237,6 +283,8 @@ export type Database = {
           approved?: boolean
           created_at?: string
           id?: string
+          last_ip_address?: string | null
+          last_login?: string | null
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string
           user_id?: string

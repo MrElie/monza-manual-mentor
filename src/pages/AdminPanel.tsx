@@ -14,6 +14,20 @@ import { Badge } from "@/components/ui/badge";
 import { Upload, Plus, Edit, Trash2, Users, Car, FileText, Settings, Image, Check, X } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+
+interface UserInteractionLog {
+  id: string;
+  user_id: string;
+  user_email: string | null;
+  session_id: string | null;
+  message_content: string;
+  ai_response?: string | null;
+  model_name?: string | null;
+  ip_address?: string | null;
+  user_agent?: string | null;
+  created_at: string;
+}
 
 const AdminPanel = () => {
   const { user, isAdmin } = useAuth();
@@ -24,8 +38,9 @@ const AdminPanel = () => {
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [brands, setBrands] = useState<CarBrand[]>([]);
   const [models, setModels] = useState<CarModel[]>([]);
-  const [documents, setDocuments] = useState<PdfDocument[]>([]);
+const [documents, setDocuments] = useState<PdfDocument[]>([]);
   const [logoUrl, setLogoUrl] = useState<string>("");
+  const [logs, setLogs] = useState<UserInteractionLog[]>([]);
 
   // State for forms
   const [selectedModel, setSelectedModel] = useState<string>("");
@@ -38,6 +53,15 @@ const AdminPanel = () => {
   const [showUserDialog, setShowUserDialog] = useState(false);
   const [showBrandDialog, setShowBrandDialog] = useState(false);
   const [showModelDialog, setShowModelDialog] = useState(false);
+
+  const formatBeirut = (iso?: string | null) => {
+    if (!iso) return '—';
+    try {
+      return new Date(iso).toLocaleString('en-US', { timeZone: 'Asia/Beirut' });
+    } catch {
+      return String(iso);
+    }
+  };
 
   useEffect(() => {
     if (isAdmin) {

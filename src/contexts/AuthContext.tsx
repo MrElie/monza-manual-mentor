@@ -90,6 +90,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         await supabase.auth.signOut();
         return { error: { message: 'Your account is pending approval. Please wait for an admin to approve your account.' } };
       }
+
+      // Track last login and IP via edge function (best effort)
+      try {
+        await supabase.functions.invoke('track-login');
+      } catch (e) {
+        console.warn('track-login failed', e);
+      }
     }
     
     return { error };
