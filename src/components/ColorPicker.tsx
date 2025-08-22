@@ -31,23 +31,44 @@ const ColorPicker = () => {
   useEffect(() => {
     const root = document.documentElement;
     
+    // Determine if we're in dark mode based on background lightness
+    const isDark = backgroundLightness < 50;
+    
     // Update primary colors (buttons, accents)
-    root.style.setProperty('--primary', `${primaryHue} 100% 15%`);
-    root.style.setProperty('--primary-foreground', `${primaryHue} 40% 98%`);
-    root.style.setProperty('--accent', `${primaryHue} 100% 25%`);
-    root.style.setProperty('--accent-foreground', `${primaryHue} 40% 98%`);
+    root.style.setProperty('--primary', `${primaryHue} 100% ${isDark ? '75%' : '15%'}`);
+    root.style.setProperty('--primary-foreground', `${primaryHue} 40% ${isDark ? '5%' : '98%'}`);
+    root.style.setProperty('--accent', `${primaryHue} 100% ${isDark ? '85%' : '25%'}`);
+    root.style.setProperty('--accent-foreground', `${primaryHue} 40% ${isDark ? '5%' : '98%'}`);
     
     // Update background colors
     root.style.setProperty('--background', `${backgroundHue} ${backgroundSaturation}% ${backgroundLightness}%`);
-    root.style.setProperty('--card', `${backgroundHue} ${backgroundSaturation}% ${Math.min(backgroundLightness + 2, 100)}%`);
-    root.style.setProperty('--popover', `${backgroundHue} ${backgroundSaturation}% ${Math.min(backgroundLightness + 1, 100)}%`);
+    root.style.setProperty('--card', `${backgroundHue} ${backgroundSaturation}% ${isDark ? Math.max(backgroundLightness + 3, 5) : Math.min(backgroundLightness + 2, 100)}%`);
+    root.style.setProperty('--popover', `${backgroundHue} ${backgroundSaturation}% ${isDark ? Math.max(backgroundLightness + 5, 8) : Math.min(backgroundLightness + 1, 100)}%`);
+    
+    // Update foreground colors based on background
+    root.style.setProperty('--foreground', `${backgroundHue} ${Math.min(backgroundSaturation + 10, 84)}% ${isDark ? '98%' : '4.9%'}`);
+    root.style.setProperty('--card-foreground', `${backgroundHue} ${Math.min(backgroundSaturation + 10, 84)}% ${isDark ? '98%' : '4.9%'}`);
+    root.style.setProperty('--popover-foreground', `${backgroundHue} ${Math.min(backgroundSaturation + 10, 84)}% ${isDark ? '98%' : '4.9%'}`);
     
     // Adjust muted colors based on background
-    const mutedLightness = backgroundLightness > 50 ? backgroundLightness - 5 : backgroundLightness + 10;
-    root.style.setProperty('--muted', `${backgroundHue} ${Math.min(backgroundSaturation + 10, 40)}% ${mutedLightness}%`);
+    const mutedLightness = isDark ? Math.min(backgroundLightness + 15, 65) : Math.max(backgroundLightness - 5, 40);
+    const mutedForegroundLightness = isDark ? Math.min(backgroundLightness + 25, 75) : Math.max(backgroundLightness - 40, 15);
+    root.style.setProperty('--muted', `${backgroundHue} ${Math.min(backgroundSaturation + 5, 32)}% ${mutedLightness}%`);
+    root.style.setProperty('--muted-foreground', `${backgroundHue} ${Math.min(backgroundSaturation + 10, 20)}% ${mutedForegroundLightness}%`);
+    
+    // Update secondary colors
+    root.style.setProperty('--secondary', `${backgroundHue} ${Math.min(backgroundSaturation + 5, 40)}% ${isDark ? Math.min(backgroundLightness + 10, 25) : Math.max(backgroundLightness - 4, 90)}%`);
+    root.style.setProperty('--secondary-foreground', `${backgroundHue} ${Math.min(backgroundSaturation + 10, 47)}% ${isDark ? '98%' : '11.2%'}`);
+    
+    // Update borders and inputs
+    root.style.setProperty('--border', `${backgroundHue} ${Math.min(backgroundSaturation + 10, 32)}% ${isDark ? Math.min(backgroundLightness + 10, 25) : Math.max(backgroundLightness - 8, 85)}%`);
+    root.style.setProperty('--input', `${backgroundHue} ${Math.min(backgroundSaturation + 10, 32)}% ${isDark ? Math.min(backgroundLightness + 10, 25) : Math.max(backgroundLightness - 8, 85)}%`);
+    
+    // Update ring color
+    root.style.setProperty('--ring', `${primaryHue} 100% ${isDark ? '75%' : '15%'}`);
     
     // Update gradients
-    root.style.setProperty('--automotive-gradient', `linear-gradient(135deg, hsl(${primaryHue} 100% 15%), hsl(${primaryHue} 100% 25%))`);
+    root.style.setProperty('--automotive-gradient', `linear-gradient(135deg, hsl(${primaryHue} 100% ${isDark ? '75%' : '15%'}), hsl(${primaryHue} 100% ${isDark ? '85%' : '25%'}))`);
     
     // Save to localStorage
     localStorage.setItem('theme-primary-hue', primaryHue.toString());
@@ -70,12 +91,12 @@ const ColorPicker = () => {
   };
 
   const presetColors = [
-    { name: 'Ocean Blue', primaryHue: 210, bgHue: 210, bgSat: 15, bgLight: 98 },
-    { name: 'Forest Green', primaryHue: 120, bgHue: 120, bgSat: 10, bgLight: 97 },
-    { name: 'Sunset Orange', primaryHue: 30, bgHue: 30, bgSat: 20, bgLight: 96 },
-    { name: 'Royal Purple', primaryHue: 280, bgHue: 280, bgSat: 12, bgLight: 97 },
-    { name: 'Rose Gold', primaryHue: 15, bgHue: 15, bgSat: 25, bgLight: 95 },
-    { name: 'Midnight', primaryHue: 240, bgHue: 240, bgSat: 30, bgLight: 8 },
+    { name: 'Ocean Blue', primaryHue: 210, bgHue: 210, bgSat: 8, bgLight: 98 },
+    { name: 'Forest Green', primaryHue: 120, bgHue: 120, bgSat: 12, bgLight: 97 },
+    { name: 'Sunset Orange', primaryHue: 30, bgHue: 30, bgSat: 15, bgLight: 96 },
+    { name: 'Royal Purple', primaryHue: 280, bgHue: 280, bgSat: 10, bgLight: 97 },
+    { name: 'Rose Gold', primaryHue: 15, bgHue: 15, bgSat: 18, bgLight: 95 },
+    { name: 'Midnight', primaryHue: 220, bgHue: 220, bgSat: 25, bgLight: 12 },
   ];
 
   const applyPreset = (preset: typeof presetColors[0]) => {
