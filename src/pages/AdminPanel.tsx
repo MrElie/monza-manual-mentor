@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Upload, Plus, Edit, Trash2, Users, Car, FileText, Settings, Image } from "lucide-react";
+import { Upload, Plus, Edit, Trash2, Users, Car, FileText, Settings, Image, Check, X } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
@@ -104,6 +104,32 @@ const AdminPanel = () => {
       toast({
         title: "Error",
         description: error.message || "Failed to update user role",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleUpdateUserApproval = async (userId: string, approved: boolean) => {
+    try {
+      const { error } = await supabase
+        .from('user_profiles')
+        .update({ approved })
+        .eq('user_id', userId);
+
+      if (error) throw error;
+
+      setUsers(users.map(user => 
+        user.user_id === userId ? { ...user, approved } : user
+      ));
+
+      toast({
+        title: "Success",
+        description: `User ${approved ? 'approved' : 'rejected'} successfully`,
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update user approval",
         variant: "destructive",
       });
     }
@@ -403,26 +429,66 @@ const AdminPanel = () => {
                 <div className="space-y-4">
                   {users.map((user) => (
                     <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg">
-                      <div>
-                        <p className="font-medium">{user.username}</p>
-                        <Badge variant={user.role === 'admin' ? 'default' : 'secondary'}>
-                          {user.role}
-                        </Badge>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <p className="font-medium">{user.username}</p>
+                          <Badge variant={user.approved ? 'default' : 'destructive'}>
+                            {user.approved ? 'Approved' : 'Pending'}
+                          </Badge>
+                          <Badge variant={user.role === 'admin' ? 'default' : 'secondary'}>
+                            {user.role}
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          Created: {new Date(user.created_at).toLocaleDateString()}
+                        </p>
                       </div>
-                      <Select 
-                        value={user.role} 
-                        onValueChange={(role: 'admin' | 'user') => handleUpdateUserRole(user.user_id, role)}
-                      >
-                        <SelectTrigger className="w-32">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="user">User</SelectItem>
-                          <SelectItem value="admin">Admin</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      
+                      <div className="flex items-center gap-2">
+                        {!user.approved && (
+                          <>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleUpdateUserApproval(user.user_id, true)}
+                              className="text-green-600 hover:text-green-700"
+                            >
+                              <Check className="h-4 w-4 mr-1" />
+                              Approve
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleUpdateUserApproval(user.user_id, false)}
+                              className="text-red-600 hover:text-red-700"
+                            >
+                              <X className="h-4 w-4 mr-1" />
+                              Reject
+                            </Button>
+                          </>
+                        )}
+                        
+                        <Select 
+                          value={user.role} 
+                          onValueChange={(role: 'admin' | 'user') => handleUpdateUserRole(user.user_id, role)}
+                        >
+                          <SelectTrigger className="w-32">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="user">User</SelectItem>
+                            <SelectItem value="admin">Admin</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
                   ))}
+                  
+                  {users.length === 0 && (
+                    <div className="text-center py-8 text-muted-foreground">
+                      No users found. Users will appear here after they sign up.
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>

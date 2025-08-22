@@ -21,6 +21,7 @@ export interface UserProfile {
   user_id: string;
   username?: string;
   role: 'admin' | 'user';
+  approved: boolean;
   created_at: string;
   updated_at: string;
 }

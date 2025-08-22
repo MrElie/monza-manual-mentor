@@ -10,7 +10,7 @@ import ColorPicker from "@/components/ColorPicker";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Footer from "@/components/Footer";
-import { Wrench, Car, Shield, LogOut, Settings } from "lucide-react";
+import { Wrench, Car, Shield, LogOut, Settings, LogIn, UserPlus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const Index = () => {
@@ -127,7 +127,7 @@ const Index = () => {
                 <LanguageSelector />
                 <ColorPicker />
               </div>
-              {user && (
+              {user ? (
                 <div className="flex items-center gap-4">
                   <span className="text-sm opacity-90">
                     Welcome, {user.email}
@@ -151,6 +151,26 @@ const Index = () => {
                   >
                     <LogOut className="h-4 w-4 mr-2" />
                     {t('navigation.logout')}
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-3">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => navigate('/auth')}
+                    className="bg-transparent border-white/20 text-white hover:bg-white/10"
+                  >
+                    <LogIn className="h-4 w-4 mr-2" />
+                    Sign In
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={() => navigate('/auth')}
+                    className="bg-white text-primary hover:bg-white/90"
+                  >
+                    <UserPlus className="h-4 w-4 mr-2" />
+                    Sign Up
                   </Button>
                 </div>
               )}

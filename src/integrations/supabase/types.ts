@@ -216,6 +216,7 @@ export type Database = {
       }
       user_profiles: {
         Row: {
+          approved: boolean
           created_at: string
           id: string
           role: Database["public"]["Enums"]["user_role"]
@@ -224,6 +225,7 @@ export type Database = {
           username: string | null
         }
         Insert: {
+          approved?: boolean
           created_at?: string
           id?: string
           role?: Database["public"]["Enums"]["user_role"]
@@ -232,6 +234,7 @@ export type Database = {
           username?: string | null
         }
         Update: {
+          approved?: boolean
           created_at?: string
           id?: string
           role?: Database["public"]["Enums"]["user_role"]
