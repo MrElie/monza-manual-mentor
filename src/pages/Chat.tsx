@@ -52,9 +52,10 @@ const Chat = () => {
 
   useEffect(() => {
     if (session) {
+      // Only fetch messages on initial load, not after every change
       fetchMessages();
     }
-  }, [session]);
+  }, [session?.id]); // Only re-run when session ID changes
 
   useEffect(() => {
     scrollToBottom();
@@ -203,21 +204,15 @@ const Chat = () => {
           sources: data.images && data.images.length > 0 ? { images: data.images } : null
         };
         
-        // Replace temp user message with real one and add assistant response
-        setMessages(prev => [
-          ...prev.filter(msg => msg.id !== userMessage.id),
-          { ...userMessage, id: `user-${Date.now()}` },
-          assistantMessage
-        ]);
+        // Add assistant response without removing user message
+        setMessages(prev => [...prev, assistantMessage]);
       } else {
         console.warn('No response in data:', data);
         throw new Error('No response received from assistant');
       }
 
-      // Try to sync with database in background (don't await)
-      setTimeout(() => {
-        fetchMessages().catch(e => console.warn('Background sync failed:', e));
-      }, 1000);
+      // Don't do automatic background sync - let user manually refresh if needed
+      console.log('Message exchange completed successfully');
 
     } catch (error) {
       console.error('Error sending message:', error);
