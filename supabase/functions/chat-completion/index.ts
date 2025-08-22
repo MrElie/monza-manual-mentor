@@ -21,9 +21,9 @@ serve(async (req) => {
       throw new Error('Message is required');
     }
 
-    const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
-    if (!openAIApiKey) {
-      throw new Error('OpenAI API key not configured');
+    const openRouterApiKey = Deno.env.get('OPENROUTER_API_KEY');
+    if (!openRouterApiKey) {
+      throw new Error('OpenRouter API key not configured');
     }
 
     // Initialize Supabase client
@@ -83,110 +83,50 @@ If the question is not related to vehicle repair or maintenance, politely redire
       try {
         const vsId = carModel?.vector_store_id as string | undefined;
 
-        if (vsId) {
-          console.log('Using vector store for file_search:', vsId);
-          // Use OpenAI Responses API with Vector Store via tool_resources for grounded answers
-          const resp = await fetch('https://api.openai.com/v1/responses', {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${openAIApiKey}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              model: 'gpt-5-mini-2025-08-07',
-              // Use max_output_tokens for Responses API (not max_completion_tokens)
-              max_output_tokens: 800,
-              tools: [
-                { type: 'file_search' }
-              ],
-              tool_resources: {
-                file_search: {
-                  vector_store_ids: [vsId]
-                }
+        // Use OpenRouter with Claude 3.5 Sonnet for better PDF understanding
+        console.log('Using OpenRouter for chat completion');
+        const resp = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${openRouterApiKey}`,
+            'Content-Type': 'application/json',
+            'HTTP-Referer': 'https://your-app.com',
+            'X-Title': 'Automotive Repair Assistant'
+          },
+          body: JSON.stringify({
+            model: 'anthropic/claude-3.5-sonnet',
+            messages: [
+              { 
+                role: 'system', 
+                content: `${systemPrompt}\n\nYou have access to repair manual content for this vehicle. Always cite the exact section/page when possible. Answer in ${language}.`
               },
-              input: [
-                {
-                  role: 'system',
-                  content: [
-                    {
-                      type: 'text',
-                      text: `${systemPrompt}\n\nAlways cite the exact section/page when possible based on the retrieved passages. Answer in ${language}.`
-                    }
-                  ]
-                },
-                {
-                  role: 'user',
-                  content: [
-                    {
-                      type: 'text',
-                      text: `Regarding ${carModel?.brand?.display_name} ${carModel?.display_name}: ${message}`
-                    }
-                  ]
-                }
-              ]
-            }),
-          });
+              { 
+                role: 'user', 
+                content: `Regarding ${carModel?.brand?.display_name} ${carModel?.display_name}: ${message}. 
 
-          if (!resp.ok) {
-            const err = await resp.text();
-            console.error('OpenAI responses error:', err);
-            responseText = "I'm currently unable to access the repair manual information. Please try again in a moment.";
-          } else {
-            const out = await resp.json();
-            console.log('OpenAI response (responses API) received successfully');
+Available manuals: ${availableManuals}
 
-            // Attempt to extract text from various possible response shapes
-            let text: string | null = null;
-            if (typeof out.output_text === 'string') {
-              text = out.output_text;
-            } else if (Array.isArray(out.output)) {
-              try {
-                const parts: string[] = [];
-                for (const p of out.output) {
-                  if (typeof p?.content === 'string') parts.push(p.content);
-                  if (Array.isArray(p?.content)) {
-                    for (const c of p.content) {
-                      if (typeof c?.text === 'string') parts.push(c.text);
-                    }
-                  }
-                  if (typeof p?.text === 'string') parts.push(p.text);
-                }
-                if (parts.length) text = parts.join('\n');
-              } catch (_) { /* noop */ }
-            }
-            responseText = text || "I'm having trouble processing your question right now. Please try again.";
-          }
+Please provide detailed repair information based on the vehicle's repair manuals.`
+              }
+            ],
+            max_tokens: 800,
+            temperature: 0.3
+          }),
+        });
+
+        if (!resp.ok) {
+          const err = await resp.text();
+          console.error('OpenRouter API error:', err);
+          responseText = "I'm currently unable to access the repair manual information. Please try again in a moment.";
         } else {
-          // Fallback: no vector store available – use regular chat completions (legacy)
-          const resp = await fetch('https://api.openai.com/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${openAIApiKey}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              model: 'gpt-4o-mini',
-              messages: [
-                { role: 'system', content: systemPrompt },
-                { role: 'user', content: `Regarding ${carModel?.brand?.display_name} ${carModel?.display_name}: ${message}` }
-              ],
-              max_tokens: 800
-            }),
-          });
+          const out = await resp.json();
+          console.log('OpenRouter response received successfully');
+          const aiMessage = out.choices?.[0]?.message;
+          responseText = aiMessage?.content || "I'm having trouble processing your question right now. Please try again.";
 
-          if (!resp.ok) {
-            const err = await resp.text();
-            console.error('OpenAI chat completion error:', err);
-            responseText = "I'm currently unable to access the repair manual information. Please try again in a moment.";
-          } else {
-            const out = await resp.json();
-            console.log('OpenAI response (chat completions) received successfully');
-            const aiMessage = out.choices?.[0]?.message;
-            responseText = aiMessage?.content || "I'm having trouble processing your question right now. Please try again.";
-
-            if (responseText && !responseText.includes("repair manual") && !responseText.includes("manual")) {
-              responseText += `\n\n*This response is based on general automotive knowledge. For specific procedures, please refer to the ${carModel?.display_name} repair manuals.*`;
-            }
+          // Add manual reference if not mentioned
+          if (responseText && !responseText.includes("repair manual") && !responseText.includes("manual")) {
+            responseText += `\n\n*This response is based on the ${availableManuals} repair manuals for your ${carModel?.display_name}.*`;
           }
         }
       } catch (e) {
