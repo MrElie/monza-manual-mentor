@@ -82,6 +82,16 @@ const Admin = () => {
       });
       return;
     }
+    // Enforce client-side max size (50 MB) to avoid server rejection
+    const MAX_SIZE_BYTES = 50 * 1024 * 1024;
+    if (file.size > MAX_SIZE_BYTES) {
+      toast({
+        title: "File too large",
+        description: "Please upload a PDF smaller than 50 MB.",
+        variant: "destructive",
+      });
+      return;
+    }
 
     setUploading(true);
     
@@ -127,11 +137,23 @@ const Admin = () => {
       setSelectedModel('');
     } catch (error) {
       console.error('Upload error:', error);
-      toast({
-        title: "Error",
-        description: "Failed to upload PDF",
-        variant: "destructive",
-      });
+      const anyErr: any = error as any;
+      const statusCode = anyErr?.statusCode || anyErr?.status || anyErr?.value?.statusCode;
+      const message: string = anyErr?.message || anyErr?.value?.message || 'Failed to upload PDF';
+
+      if (statusCode === 413 || /exceeded the maximum allowed size/i.test(message)) {
+        toast({
+          title: "File too large",
+          description: "Your PDF exceeds the maximum allowed size (50 MB). Please compress it and try again.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: message,
+          variant: "destructive",
+        });
+      }
     } finally {
       setUploading(false);
     }
