@@ -118,7 +118,7 @@ If the question is not related to vehicle repair or maintenance, politely redire
                   role: 'user',
                   content: [
                     {
-                      type: 'input_text',
+                      type: 'text',
                       text: `Regarding ${carModel?.brand?.display_name} ${carModel?.display_name}: ${message}`
                     }
                   ]
