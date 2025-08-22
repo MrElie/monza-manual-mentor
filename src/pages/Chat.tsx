@@ -130,17 +130,26 @@ const Chat = () => {
     if (!session) return;
 
     try {
+      console.log('Fetching messages for session:', session.id);
       const { data, error } = await supabase
         .from('chat_messages')
         .select('*')
         .eq('session_id', session.id)
         .order('created_at', { ascending: true });
 
-      if (error) throw error;
-      setMessages(data?.map((msg: any) => ({
+      if (error) {
+        console.error('Error fetching messages:', error);
+        throw error;
+      }
+      
+      console.log('Fetched messages:', data);
+      const formattedMessages = data?.map((msg: any) => ({
         ...msg,
         role: msg.role as 'user' | 'assistant'
-      })) || []);
+      })) || [];
+      
+      setMessages(formattedMessages);
+      console.log('Set messages in state:', formattedMessages);
     } catch (error) {
       console.error('Error fetching messages:', error);
     }
@@ -175,15 +184,16 @@ const Chat = () => {
         }
       });
 
+      console.log('Function response:', { data, error });
+
       if (error) {
         console.error('Edge function error:', error);
         throw error;
       }
 
-      console.log('AI response received:', data);
-
-      // If we got a response, add it to the UI immediately as a fallback
+      // Add assistant response immediately
       if (data?.response) {
+        console.log('Adding assistant response to UI:', data.response);
         const assistantMessage: ChatMessage = {
           id: `temp-assistant-${Date.now()}`,
           session_id: session.id,
@@ -192,23 +202,23 @@ const Chat = () => {
           created_at: new Date().toISOString(),
           sources: data.images && data.images.length > 0 ? { images: data.images } : null
         };
-        setMessages(prev => [...prev.filter(msg => msg.id !== userMessage.id), 
-          { ...userMessage, id: `user-${Date.now()}` }, 
+        
+        // Replace temp user message with real one and add assistant response
+        setMessages(prev => [
+          ...prev.filter(msg => msg.id !== userMessage.id),
+          { ...userMessage, id: `user-${Date.now()}` },
           assistantMessage
         ]);
+      } else {
+        console.warn('No response in data:', data);
+        throw new Error('No response received from assistant');
       }
 
-      // Also try to refresh from database, but don't fail if this doesn't work
-      try {
-        await fetchMessages();
-      } catch (fetchError) {
-        console.warn('Failed to fetch messages from database, but response was displayed:', fetchError);
-      }
+      // Try to sync with database in background (don't await)
+      setTimeout(() => {
+        fetchMessages().catch(e => console.warn('Background sync failed:', e));
+      }, 1000);
 
-      toast({
-        title: t('common.success'),
-        description: 'Message sent successfully'
-      });
     } catch (error) {
       console.error('Error sending message:', error);
       toast({
