@@ -88,6 +88,34 @@ If the question is not vehicle-specific or not covered in the manuals, politely 
       try {
         const vsId = carModel?.vector_store_id as string | undefined;
 
+        // Check if the user is asking for images or diagrams
+        const isImageRequest = message.toLowerCase().includes('image') || 
+                              message.toLowerCase().includes('diagram') || 
+                              message.toLowerCase().includes('picture') ||
+                              message.toLowerCase().includes('show me') ||
+                              message.toLowerCase().includes('schematic');
+
+        let extractedImages = [];
+        
+        // If user is requesting images, try to extract relevant ones
+        if (isImageRequest && docs.length > 0) {
+          console.log('User requesting images, attempting extraction...');
+          try {
+            const imageExtractionPromises = docs.map(async (doc) => {
+              const { data: images } = await supabase.functions.invoke('extract-pdf-images', {
+                body: { documentId: doc.id, query: message }
+              });
+              return images?.images || [];
+            });
+            
+            const allImages = await Promise.all(imageExtractionPromises);
+            extractedImages = allImages.flat();
+            console.log('Extracted images count:', extractedImages.length);
+          } catch (e) {
+            console.error('Image extraction failed:', e);
+          }
+        }
+
         // Use OpenRouter with Claude 3.5 Sonnet for better PDF understanding
         console.log('Using OpenRouter for chat completion');
         const resp = await fetch('https://openrouter.ai/api/v1/chat/completions', {
@@ -103,13 +131,19 @@ If the question is not vehicle-specific or not covered in the manuals, politely 
             messages: [
               { 
                 role: 'system', 
-                content: `${systemPrompt}\n\nREMEMBER: You can ONLY use information from the repair manuals listed above. If you don't have the specific information in the manuals, you must clearly state this limitation. Answer in ${language}.`
+                content: `${systemPrompt}\n\nREMEMBER: You can ONLY use information from the repair manuals listed above. If you don't have the specific information in the manuals, you must clearly state this limitation. 
+
+When users ask for images, diagrams, or visual references, acknowledge that you can see the content in the manuals but explain that image extraction is currently being developed. Provide detailed descriptions of what the diagrams show instead.
+
+Answer in ${language}.`
               },
               { 
                 role: 'user', 
                 content: `Question about ${carModel?.brand?.display_name} ${carModel?.display_name}: "${message}"
 
 Available repair manuals for reference: ${availableManuals}
+
+${extractedImages.length > 0 ? `Found ${extractedImages.length} relevant images/diagrams in the manuals.` : ''}
 
 Please provide information ONLY from these specific repair manuals. If the information is not available in the manuals, please state that clearly.`
               }
@@ -129,10 +163,22 @@ Please provide information ONLY from these specific repair manuals. If the infor
           const aiMessage = out.choices?.[0]?.message;
           responseText = aiMessage?.content || "I'm having trouble processing your question right now. Please try again.";
 
-          // Ensure proper manual citation
-          if (responseText && !responseText.toLowerCase().includes("manual") && !responseText.toLowerCase().includes("section")) {
-            responseText = `Based on the available repair manuals (${availableManuals}):\n\n${responseText}\n\n*Note: This information is sourced exclusively from the repair documentation for your ${carModel?.display_name}.*`;
+          // Ensure proper manual citation and handle image requests
+          let finalResponse = responseText;
+          
+          if (isImageRequest && extractedImages.length === 0) {
+            finalResponse += `\n\n🔍 **Image/Diagram Request Noted**: While I can see the technical diagrams and schematics in the repair manuals for your ${carModel?.display_name}, I'm currently unable to extract and display the actual images. The image extraction feature is under development.
+
+📖 **Manual Reference**: The relevant diagrams can be found in: ${availableManuals}
+
+💡 **Recommendation**: For now, please refer to the physical or digital copies of these repair manuals to view the specific diagrams mentioned above.`;
           }
+
+          if (finalResponse && !finalResponse.toLowerCase().includes("manual") && !finalResponse.toLowerCase().includes("section")) {
+            finalResponse = `Based on the available repair manuals (${availableManuals}):\n\n${finalResponse}\n\n*Note: This information is sourced exclusively from the repair documentation for your ${carModel?.display_name}.*`;
+          }
+          
+          responseText = finalResponse;
         }
       } catch (e) {
         console.error('Chat completion API exception', e);
@@ -150,11 +196,12 @@ Please provide information ONLY from these specific repair manuals. If the infor
           content: message
         });
 
-        // Save assistant response
+        // Save assistant response with extracted images
         await supabase.from('chat_messages').insert({
           session_id: sessionId,
           role: 'assistant',
-          content: responseText
+          content: responseText,
+          sources: extractedImages.length > 0 ? { images: extractedImages } : null
         });
       } catch (error) {
         console.error('Error saving chat messages:', error);

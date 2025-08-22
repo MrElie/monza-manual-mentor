@@ -348,6 +348,19 @@ const Chat = () => {
                         <div className="prose prose-sm max-w-none">
                           <p className="whitespace-pre-wrap m-0">{message.content}</p>
                         </div>
+                        {message.sources?.images && message.sources.images.length > 0 && (
+                          <div className="mt-3 pt-3 border-t border-border">
+                            <p className="text-sm font-medium mb-2">📋 Related Diagrams:</p>
+                            <div className="space-y-2">
+                              {message.sources.images.map((image: any, index: number) => (
+                                <div key={index} className="text-xs bg-muted p-2 rounded">
+                                  <p className="font-medium">{image.description}</p>
+                                  {image.page && <p className="text-muted-foreground">Page {image.page}</p>}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </CardContent>
                     </Card>
                   </div>
