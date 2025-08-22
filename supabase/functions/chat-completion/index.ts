@@ -94,8 +94,8 @@ If the question is not related to vehicle repair or maintenance, politely redire
             },
             body: JSON.stringify({
               model: 'gpt-5-mini-2025-08-07',
-              // Newer models use max_completion_tokens and do NOT support temperature
-              max_completion_tokens: 800,
+              // Use max_output_tokens for Responses API (not max_completion_tokens)
+              max_output_tokens: 800,
               tools: [
                 { type: 'file_search' }
               ],
