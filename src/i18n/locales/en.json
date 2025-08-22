@@ -1,0 +1,127 @@
+{
+  "app": {
+    "title": "Monza Repair Helper",
+    "subtitle": "Professional repair assistant for Voyah and Mhero electric vehicles"
+  },
+  "navigation": {
+    "home": "Home",
+    "chat": "Chat",
+    "camera": "Camera",
+    "voice": "Voice",
+    "settings": "Settings",
+    "logout": "Logout"
+  },
+  "auth": {
+    "signIn": "Sign In",
+    "signUp": "Sign Up",
+    "email": "Email",
+    "password": "Password",
+    "confirmPassword": "Confirm Password",
+    "forgotPassword": "Forgot Password?",
+    "noAccount": "Don't have an account?",
+    "hasAccount": "Already have an account?",
+    "signInButton": "Sign In to Continue",
+    "signUpButton": "Create Account",
+    "signingIn": "Signing in...",
+    "signingUp": "Creating account...",
+    "invalidCredentials": "Invalid credentials",
+    "emailRequired": "Email is required",
+    "passwordRequired": "Password is required",
+    "passwordTooShort": "Password must be at least 6 characters",
+    "passwordsDontMatch": "Passwords don't match"
+  },
+  "home": {
+    "selectBrand": "Select Vehicle Brand",
+    "chooseModel": "Choose Your {{brand}} Model",
+    "selectModelDescription": "Select your specific vehicle model to access targeted repair guides, technical manuals, and expert assistance.",
+    "startRepairChat": "Start Repair Chat",
+    "readyToStart": "Ready to Get Started?",
+    "signInDescription": "Sign in to access the full repair assistant with personalized chat history and advanced diagnostic tools.",
+    "certifiedData": "Certified Technical Data",
+    "allModelsSupported": "All Models Supported"
+  },
+  "chat": {
+    "title": "Repair Assistant",
+    "typeMessage": "Type your message or ask a question...",
+    "send": "Send",
+    "listening": "Listening...",
+    "processing": "Processing...",
+    "newChat": "New Chat",
+    "chatHistory": "Chat History",
+    "voiceMode": "Voice Mode",
+    "textMode": "Text Mode",
+    "takePicture": "Take Picture",
+    "uploadImage": "Upload Image",
+    "analyzing": "Analyzing image...",
+    "speakNow": "Speak now..."
+  },
+  "camera": {
+    "title": "Visual Diagnostics",
+    "takePicture": "Take Picture",
+    "retake": "Retake",
+    "analyze": "Analyze",
+    "analyzing": "Analyzing image with AI...",
+    "noImageSelected": "No image selected",
+    "cameraPermission": "Camera permission required",
+    "enableCamera": "Enable Camera",
+    "imageAnalysis": "Image Analysis",
+    "results": "Results"
+  },
+  "voice": {
+    "title": "Voice Assistant",
+    "startRecording": "Start Recording",
+    "stopRecording": "Stop Recording",
+    "processing": "Processing voice...",
+    "micPermission": "Microphone permission required",
+    "enableMic": "Enable Microphone",
+    "speakNow": "Speak now in Arabic or English",
+    "transcript": "Transcript",
+    "response": "Response"
+  },
+  "settings": {
+    "title": "Settings",
+    "language": "Language",
+    "theme": "Theme",
+    "notifications": "Notifications",
+    "about": "About",
+    "version": "Version",
+    "support": "Support",
+    "privacy": "Privacy Policy",
+    "terms": "Terms of Service"
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "cancel": "Cancel",
+    "ok": "OK",
+    "retry": "Retry",
+    "close": "Close",
+    "save": "Save",
+    "delete": "Delete",
+    "edit": "Edit",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "search": "Search",
+    "filter": "Filter",
+    "sort": "Sort",
+    "refresh": "Refresh"
+  },
+  "diagnostics": {
+    "codes": "Diagnostic Codes",
+    "description": "Description",
+    "solution": "Solution",
+    "parts": "Required Parts",
+    "steps": "Repair Steps",
+    "warnings": "Warnings",
+    "tools": "Required Tools"
+  },
+  "models": {
+    "voyahFree": "Voyah Free",
+    "voyahPassion": "Voyah Passion", 
+    "voyahDream": "Voyah Dream",
+    "voyahCourage": "Voyah Courage",
+    "mhero": "Mhero"
+  }
+}

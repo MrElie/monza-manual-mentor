@@ -1,13 +1,20 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { CarBrand, CarModel } from "@/types/database";
+import { useAuth } from "@/contexts/AuthContext";
 import CarModelCard from "@/components/CarModelCard";
+import LanguageSelector from "@/components/LanguageSelector";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Wrench, Car, Shield } from "lucide-react";
+import { Wrench, Car, Shield, LogOut } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const Index = () => {
+  const navigate = useNavigate();
+  const { t } = useTranslation();
+  const { user, signOut } = useAuth();
   const [brands, setBrands] = useState<CarBrand[]>([]);
   const [models, setModels] = useState<CarModel[]>([]);
   const [selectedBrand, setSelectedBrand] = useState<CarBrand | null>(null);
@@ -39,7 +46,7 @@ const Index = () => {
     } catch (error) {
       console.error('Error fetching brands:', error);
       toast({
-        title: "Error loading brands",
+        title: t('common.error'),
         description: "Please try refreshing the page.",
         variant: "destructive",
       });
@@ -61,7 +68,7 @@ const Index = () => {
     } catch (error) {
       console.error('Error fetching models:', error);
       toast({
-        title: "Error loading models",
+        title: t('common.error'),
         description: "Please try refreshing the page.",
         variant: "destructive",
       });
@@ -69,10 +76,18 @@ const Index = () => {
   };
 
   const handleModelSelect = (model: CarModel) => {
-    // TODO: Navigate to chat interface with selected model
+    if (!user) {
+      navigate('/auth');
+      return;
+    }
+    navigate(`/chat/${model.id}`);
+  };
+
+  const handleSignOut = async () => {
+    await signOut();
     toast({
-      title: "Chat Feature Coming Soon",
-      description: `Selected ${model.display_name}. Chat interface will be available soon.`,
+      title: t('common.success'),
+      description: 'Signed out successfully'
     });
   };
 
@@ -81,7 +96,7 @@ const Index = () => {
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading repair assistant...</p>
+          <p className="text-muted-foreground">{t('common.loading')}</p>
         </div>
       </div>
     );
@@ -91,10 +106,10 @@ const Index = () => {
     <>
       {/* SEO Head Tags */}
       <head>
-        <title>Monza Repair Helper - Professional Voyah & Mhero Vehicle Repair Assistant</title>
+        <title>{t('app.title')} - Professional Voyah & Mhero Vehicle Repair Assistant</title>
         <meta 
           name="description" 
-          content="Professional repair assistant for Voyah and Mhero electric vehicles. Access technical manuals, diagnostics, and repair guidance from certified experts." 
+          content={t('app.subtitle')}
         />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="canonical" href="/" />
@@ -102,26 +117,52 @@ const Index = () => {
 
       <main className="min-h-screen bg-background">
         {/* Hero Section */}
-        <header className="bg-[var(--automotive-gradient)] text-primary-foreground py-16">
-          <div className="container mx-auto px-4 text-center">
-            <div className="flex items-center justify-center mb-6">
-              <Wrench className="h-12 w-12 mr-4" />
-              <h1 className="text-4xl md:text-6xl font-bold">
-                Monza Repair Helper
-              </h1>
+        <header className="bg-[var(--automotive-gradient)] text-primary-foreground py-16 relative">
+          <div className="container mx-auto px-4">
+            {/* Top Navigation */}
+            <div className="flex justify-between items-center mb-8">
+              <div className="flex items-center gap-4">
+                <LanguageSelector />
+              </div>
+              {user && (
+                <div className="flex items-center gap-4">
+                  <span className="text-sm opacity-90">
+                    Welcome, {user.email}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleSignOut}
+                    className="bg-transparent border-white/20 text-white hover:bg-white/10"
+                  >
+                    <LogOut className="h-4 w-4 mr-2" />
+                    {t('navigation.logout')}
+                  </Button>
+                </div>
+              )}
             </div>
-            <p className="text-xl md:text-2xl mb-8 max-w-3xl mx-auto opacity-90">
-              Professional repair assistant for Voyah and Mhero electric vehicles
-            </p>
-            <div className="flex flex-wrap justify-center gap-4 mb-8">
-              <Badge variant="secondary" className="text-sm py-2 px-4">
-                <Shield className="h-4 w-4 mr-2" />
-                Certified Technical Data
-              </Badge>
-              <Badge variant="secondary" className="text-sm py-2 px-4">
-                <Car className="h-4 w-4 mr-2" />
-                All Models Supported
-              </Badge>
+
+            {/* Hero Content */}
+            <div className="text-center">
+              <div className="flex items-center justify-center mb-6">
+                <Wrench className="h-12 w-12 mr-4" />
+                <h1 className="text-4xl md:text-6xl font-bold">
+                  {t('app.title')}
+                </h1>
+              </div>
+              <p className="text-xl md:text-2xl mb-8 max-w-3xl mx-auto opacity-90">
+                {t('app.subtitle')}
+              </p>
+              <div className="flex flex-wrap justify-center gap-4 mb-8">
+                <Badge variant="secondary" className="text-sm py-2 px-4">
+                  <Shield className="h-4 w-4 mr-2" />
+                  {t('home.certifiedData')}
+                </Badge>
+                <Badge variant="secondary" className="text-sm py-2 px-4">
+                  <Car className="h-4 w-4 mr-2" />
+                  {t('home.allModelsSupported')}
+                </Badge>
+              </div>
             </div>
           </div>
         </header>
@@ -130,7 +171,7 @@ const Index = () => {
         <section className="py-12 bg-muted/30">
           <div className="container mx-auto px-4">
             <h2 className="text-3xl font-bold text-center mb-8 text-foreground">
-              Select Vehicle Brand
+              {t('home.selectBrand')}
             </h2>
             <div className="flex justify-center gap-4 mb-8">
               {brands.map((brand) => (
@@ -153,11 +194,10 @@ const Index = () => {
           <section className="py-16">
             <div className="container mx-auto px-4">
               <h2 className="text-3xl font-bold text-center mb-4 text-foreground">
-                Choose Your {selectedBrand.display_name} Model
+                {t('home.chooseModel', { brand: selectedBrand.display_name })}
               </h2>
               <p className="text-muted-foreground text-center mb-12 max-w-2xl mx-auto">
-                Select your specific vehicle model to access targeted repair guides, 
-                technical manuals, and expert assistance.
+                {t('home.selectModelDescription')}
               </p>
               
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
@@ -173,21 +213,26 @@ const Index = () => {
           </section>
         )}
 
-        {/* Login CTA */}
-        <section className="py-16 bg-muted/50">
-          <div className="container mx-auto px-4 text-center">
-            <h2 className="text-2xl font-bold mb-4 text-foreground">
-              Ready to Get Started?
-            </h2>
-            <p className="text-muted-foreground mb-8 max-w-xl mx-auto">
-              Sign in to access the full repair assistant with personalized chat history 
-              and advanced diagnostic tools.
-            </p>
-            <Button size="lg" className="bg-[var(--automotive-gradient)]">
-              Sign In to Continue
-            </Button>
-          </div>
-        </section>
+        {/* Login CTA - Only show if not authenticated */}
+        {!user && (
+          <section className="py-16 bg-muted/50">
+            <div className="container mx-auto px-4 text-center">
+              <h2 className="text-2xl font-bold mb-4 text-foreground">
+                {t('home.readyToStart')}
+              </h2>
+              <p className="text-muted-foreground mb-8 max-w-xl mx-auto">
+                {t('home.signInDescription')}
+              </p>
+              <Button 
+                size="lg" 
+                className="bg-[var(--automotive-gradient)]"
+                onClick={() => navigate('/auth')}
+              >
+                {t('auth.signInButton')}
+              </Button>
+            </div>
+          </section>
+        )}
       </main>
     </>
   );

@@ -1,0 +1,127 @@
+{
+  "app": {
+    "title": "مساعد إصلاح مونزا",
+    "subtitle": "مساعد إصلاح مهني لسيارات فوياه ومهيرو الكهربائية"
+  },
+  "navigation": {
+    "home": "الرئيسية",
+    "chat": "المحادثة",
+    "camera": "الكاميرا",
+    "voice": "الصوت",
+    "settings": "الإعدادات",
+    "logout": "تسجيل الخروج"
+  },
+  "auth": {
+    "signIn": "تسجيل الدخول",
+    "signUp": "إنشاء حساب",
+    "email": "البريد الإلكتروني",
+    "password": "كلمة المرور",
+    "confirmPassword": "تأكيد كلمة المرور",
+    "forgotPassword": "نسيت كلمة المرور؟",
+    "noAccount": "ليس لديك حساب؟",
+    "hasAccount": "لديك حساب بالفعل؟",
+    "signInButton": "تسجيل الدخول للمتابعة",
+    "signUpButton": "إنشاء حساب",
+    "signingIn": "جاري تسجيل الدخول...",
+    "signingUp": "جاري إنشاء الحساب...",
+    "invalidCredentials": "بيانات الاعتماد غير صحيحة",
+    "emailRequired": "البريد الإلكتروني مطلوب",
+    "passwordRequired": "كلمة المرور مطلوبة",
+    "passwordTooShort": "كلمة المرور يجب أن تكون 6 أحرف على الأقل",
+    "passwordsDontMatch": "كلمات المرور غير متطابقة"
+  },
+  "home": {
+    "selectBrand": "اختر علامة السيارة التجارية",
+    "chooseModel": "اختر موديل {{brand}} الخاص بك",
+    "selectModelDescription": "اختر موديل سيارتك المحدد للوصول إلى أدلة الإصلاح المستهدفة والأدلة التقنية والمساعدة المتخصصة.",
+    "startRepairChat": "بدء محادثة الإصلاح",
+    "readyToStart": "مستعد للبدء؟",
+    "signInDescription": "سجل الدخول للوصول إلى مساعد الإصلاح الكامل مع تاريخ المحادثات الشخصي وأدوات التشخيص المتقدمة.",
+    "certifiedData": "بيانات تقنية معتمدة",
+    "allModelsSupported": "جميع الموديلات مدعومة"
+  },
+  "chat": {
+    "title": "مساعد الإصلاح",
+    "typeMessage": "اكتب رسالتك أو اطرح سؤالاً...",
+    "send": "إرسال",
+    "listening": "يستمع...",
+    "processing": "جاري المعالجة...",
+    "newChat": "محادثة جديدة",
+    "chatHistory": "تاريخ المحادثات",
+    "voiceMode": "وضع الصوت",
+    "textMode": "وضع النص",
+    "takePicture": "التقط صورة",
+    "uploadImage": "تحميل صورة",
+    "analyzing": "جاري تحليل الصورة...",
+    "speakNow": "تحدث الآن..."
+  },
+  "camera": {
+    "title": "التشخيص البصري",
+    "takePicture": "التقط صورة",
+    "retake": "إعادة التقاط",
+    "analyze": "تحليل",
+    "analyzing": "جاري تحليل الصورة بالذكاء الاصطناعي...",
+    "noImageSelected": "لم يتم اختيار صورة",
+    "cameraPermission": "مطلوب إذن الكاميرا",
+    "enableCamera": "تفعيل الكاميرا",
+    "imageAnalysis": "تحليل الصورة",
+    "results": "النتائج"
+  },
+  "voice": {
+    "title": "المساعد الصوتي",
+    "startRecording": "بدء التسجيل",
+    "stopRecording": "إيقاف التسجيل",
+    "processing": "جاري معالجة الصوت...",
+    "micPermission": "مطلوب إذن الميكروفون",
+    "enableMic": "تفعيل الميكروفون",
+    "speakNow": "تحدث الآن بالعربية أو الإنجليزية",
+    "transcript": "النسخة المكتوبة",
+    "response": "الاستجابة"
+  },
+  "settings": {
+    "title": "الإعدادات",
+    "language": "اللغة",
+    "theme": "المظهر",
+    "notifications": "الإشعارات",
+    "about": "حول",
+    "version": "الإصدار",
+    "support": "الدعم",
+    "privacy": "سياسة الخصوصية",
+    "terms": "شروط الخدمة"
+  },
+  "common": {
+    "loading": "جاري التحميل...",
+    "error": "خطأ",
+    "success": "نجح",
+    "cancel": "إلغاء",
+    "ok": "موافق",
+    "retry": "إعادة المحاولة",
+    "close": "إغلاق",
+    "save": "حفظ",
+    "delete": "حذف",
+    "edit": "تعديل",
+    "back": "السابق",
+    "next": "التالي",
+    "previous": "السابق",
+    "search": "بحث",
+    "filter": "تصفية",
+    "sort": "ترتيب",
+    "refresh": "تحديث"
+  },
+  "diagnostics": {
+    "codes": "رموز التشخيص",
+    "description": "الوصف",
+    "solution": "الحل",
+    "parts": "القطع المطلوبة",
+    "steps": "خطوات الإصلاح",
+    "warnings": "تحذيرات",
+    "tools": "الأدوات المطلوبة"
+  },
+  "models": {
+    "voyahFree": "فوياه فري",
+    "voyahPassion": "فوياه باشن",
+    "voyahDream": "فوياه دريم",
+    "voyahCourage": "فوياه كوريج",
+    "mhero": "مهيرو"
+  }
+}
