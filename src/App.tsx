@@ -10,6 +10,7 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Chat from "./pages/Chat";
 import AdminPanel from "./pages/AdminPanel";
+import AdminManuals from "./pages/AdminManuals";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -51,6 +52,11 @@ const App = () => (
                 <Route path="/admin" element={
                   <ProtectedRoute>
                     <AdminPanel />
+                  </ProtectedRoute>
+                } />
+                <Route path="/admin/manuals" element={
+                  <ProtectedRoute>
+                    <AdminManuals />
                   </ProtectedRoute>
                 } />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

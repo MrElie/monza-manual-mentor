@@ -1,1 +1,7 @@
 project_id = "ggtgwndgilhnlxcwhtdd"
+
+[functions.upload-pdf-to-vector-store]
+verify_jwt = true
+
+[functions.delete-pdf-from-vector-store]
+verify_jwt = true
